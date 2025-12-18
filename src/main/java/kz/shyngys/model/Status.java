@@ -2,5 +2,6 @@ package kz.shyngys.model;
 
 public enum Status {
     ACTIVE,
-    DRAFT
+    UNDER_REVIEW,
+    DELETED
 }

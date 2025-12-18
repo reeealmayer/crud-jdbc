@@ -3,6 +3,7 @@ import org.gradle.kotlin.dsl.liquibaseRuntime
 plugins {
     id("java")
     id("org.liquibase.gradle") version "2.2.0"
+    id("io.freefair.lombok") version "9.1.0"
 }
 
 group = "org.example"

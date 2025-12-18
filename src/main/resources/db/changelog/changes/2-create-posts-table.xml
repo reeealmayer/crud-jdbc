@@ -10,12 +10,12 @@
             create table posts(
                 id int unsigned not null auto_increment,
                 content text,
-                created datetime not null,
-                updated datetime,
+                created datetime not null default current_timestamp,
+                updated datetime on update current_timestamp,
                 status varchar(30) not null,
                 writer_id int unsigned not null,
                 primary key (id),
-                foreign key (writer_id) references writers(id)
+                foreign key (writer_id) references writers(id) on delete cascade
             )
         </sql>
     </changeSet>
