@@ -9,7 +9,7 @@ public class Main {
 
     public static void main(String[] args) {
         WriterRepository writerRepository = new JdbcWriterRepositoryImpl();
-        Writer byId = writerRepository.getById(30L);
+        Writer byId = writerRepository.getById(1L);
         System.out.println(byId);
     }
 }
