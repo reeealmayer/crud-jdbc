@@ -19,6 +19,10 @@ import java.util.Objects;
 
 public class JdbcWriterRepositoryImpl implements WriterRepository {
 
+    //TODO
+    //Connection -> singleton
+    //сохранять посты в методе save
+
     private final String SQL_GET_WRITER_WITH_POSTS_BY_ID = "select w.id, w.first_name, w.last_name, p.id, p.content, p.created, p.updated, p.status " +
             " from writers w " +
             " left join posts p " +
