@@ -12,7 +12,7 @@ public interface WriterService {
 
     List<WriterShortResponseDto> getAll();
 
-    WriterShortResponseDto create(WriterCreateRequestDto writer);
+    WriterFullResponseDto create(WriterCreateRequestDto writer);
 
     WriterShortResponseDto update(WriterUpdateRequestDto writer);
 

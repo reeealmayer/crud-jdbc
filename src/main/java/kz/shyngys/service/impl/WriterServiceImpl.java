@@ -7,6 +7,7 @@ import kz.shyngys.model.dto.WriterShortResponseDto;
 import kz.shyngys.model.dto.WriterUpdateRequestDto;
 import kz.shyngys.repository.WriterRepository;
 import kz.shyngys.service.WriterService;
+import kz.shyngys.util.Mapper;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -19,7 +20,7 @@ public class WriterServiceImpl implements WriterService {
     @Override
     public WriterFullResponseDto getById(Long id) {
         Writer writer = writerRepository.getById(id);
-        return WriterFullResponseDto.mapFromEntity(writer);
+        return Mapper.toWriterFullResponseDto(writer);
     }
 
     @Override
@@ -31,12 +32,10 @@ public class WriterServiceImpl implements WriterService {
     }
 
     @Override
-    public WriterShortResponseDto create(WriterCreateRequestDto requestDto) {
-        Writer writer = new Writer();
-        writer.setFirstName(requestDto.getFirstName());
-        writer.setLastName(requestDto.getLastName());
+    public WriterFullResponseDto create(WriterCreateRequestDto requestDto) {
+        Writer writer = Mapper.toWriter(requestDto);
         Writer savedWriter = writerRepository.save(writer);
-        return WriterShortResponseDto.mapFromEntity(savedWriter);
+        return Mapper.toWriterFullResponseDto(savedWriter);
     }
 
     @Override
