@@ -1,16 +1,15 @@
-package kz.shyngys.repository;
+package kz.shyngys.repository.impl;
 
 import kz.shyngys.db.DatabaseConnection;
-import kz.shyngys.db.DatabaseProperties;
-import kz.shyngys.exception.WriterNotFoundException;
+import kz.shyngys.exception.NotFoundException;
 import kz.shyngys.model.Label;
 import kz.shyngys.model.Post;
 import kz.shyngys.model.Status;
 import kz.shyngys.model.Writer;
+import kz.shyngys.repository.WriterRepository;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -60,7 +59,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
                 }
 
                 if (writer == null) {
-                    throw new WriterNotFoundException("Writer не найден с id: " + id);
+                    throw new NotFoundException("Writer не найден с id: " + id);
                 }
                 writer.setPosts(posts);
                 return writer;
@@ -86,7 +85,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
                     }
                 }
                 if (writers.isEmpty()) {
-                    throw new WriterNotFoundException("В таблице writers нет записей");
+                    throw new NotFoundException("В таблице writers нет записей");
                 }
                 return writers;
             }

@@ -13,6 +13,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.util.List;
 
 public class Mapper {
+    private Mapper() {
+    }
+
     public static Writer toWriter(WriterCreateRequestDto requestDto) {
         Writer writer = new Writer();
         writer.setFirstName(requestDto.getFirstName());

@@ -1,0 +1,134 @@
+package kz.shyngys.repository.impl;
+
+import kz.shyngys.db.DatabaseConnection;
+import kz.shyngys.exception.NotFoundException;
+import kz.shyngys.model.Label;
+import kz.shyngys.repository.LabelRepository;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+public class JdbcLabelRepositoryImpl implements LabelRepository {
+
+    private final String SQL_GET_LABEL_BY_ID = "select * from labels where id = ?";
+    private final String SQL_GET_ALL_LABELS = "select * from labels";
+    private final String SQL_INSERT_LABEL = "insert into labels (name) values (?)";
+    private final String SQL_UPDATE_LABEL_BY_ID = "update labels set name = ? where id = ?";
+    private final String SQl_DELETE_LABEL_BY_ID = "delete from labels where id = ?";
+
+    @Override
+    public Label getById(Long id) {
+        Connection connection = DatabaseConnection.getInstance();
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_LABEL_BY_ID)
+        ) {
+            preparedStatement.setLong(1, id);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                Label label = null;
+                if (resultSet.next()) {
+                    label = mapToLabel(resultSet);
+                }
+                if (label == null) {
+                    throw new NotFoundException("Label не найден с id " + id);
+                }
+                return label;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка SQL: " + e);
+        }
+    }
+
+    private Label mapToLabel(ResultSet resultSet) throws SQLException {
+        Label label = new Label();
+        label.setId(resultSet.getLong("id"));
+        label.setName(resultSet.getString("name"));
+        return label;
+    }
+
+    @Override
+    public List<Label> getAll() {
+        Connection connection = DatabaseConnection.getInstance();
+        try (
+                Statement statement = connection.createStatement()
+        ) {
+            try (ResultSet resultSet = statement.executeQuery(SQL_GET_ALL_LABELS)) {
+                List<Label> labels = new ArrayList<>();
+                while (resultSet.next()) {
+                    labels.add(mapToLabel(resultSet));
+                }
+                if (labels.isEmpty()) {
+                    throw new NotFoundException("В таблице labels нет записей");
+                }
+                return labels;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка SQL: " + e);
+        }
+    }
+
+    @Override
+    public Label save(Label label) {
+        Connection connection = DatabaseConnection.getInstance();
+        try (
+                PreparedStatement preparedStatement
+                        = connection.prepareStatement(SQL_INSERT_LABEL, Statement.RETURN_GENERATED_KEYS)
+        ) {
+            preparedStatement.setString(1, label.getName());
+            int affectedRows = preparedStatement.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("Создание Label не удалось, ни одна строка не добавлена");
+            }
+
+            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    label.setId(generatedKeys.getLong(1));
+                    return label;
+                }
+                throw new SQLException("Создание Label не удалось, id не получен");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка SQL: " + e);
+        }
+    }
+
+    @Override
+    public Label update(Label label) {
+        Connection connection = DatabaseConnection.getInstance();
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE_LABEL_BY_ID)
+        ) {
+            preparedStatement.setString(1, label.getName());
+            preparedStatement.setLong(2, label.getId());
+
+            int affectedRows = preparedStatement.executeUpdate();
+            if (affectedRows == 0) {
+                throw new RuntimeException("Обновление Label не удалось, ни одна строка не изменилась");
+            }
+            return label;
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка SQL: " + e);
+        }
+    }
+
+    @Override
+    public void deleteById(Label label) {
+        Connection connection = DatabaseConnection.getInstance();
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement(SQl_DELETE_LABEL_BY_ID)
+        ) {
+            preparedStatement.setLong(1, label.getId());
+            int affectedRows = preparedStatement.executeUpdate();
+            if (affectedRows == 0) {
+                throw new RuntimeException("Удаление Label не удалось, ни одна строка не изменилась");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка SQL: " + e);
+        }
+    }
+}

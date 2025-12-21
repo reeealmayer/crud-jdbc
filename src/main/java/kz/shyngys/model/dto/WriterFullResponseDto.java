@@ -1,6 +1,5 @@
 package kz.shyngys.model.dto;
 
-import kz.shyngys.model.Post;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
