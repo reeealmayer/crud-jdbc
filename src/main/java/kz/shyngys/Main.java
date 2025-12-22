@@ -2,7 +2,9 @@ package kz.shyngys;
 
 import kz.shyngys.db.DatabaseConnection;
 import kz.shyngys.model.Label;
+import kz.shyngys.model.Post;
 import kz.shyngys.model.Status;
+import kz.shyngys.model.Writer;
 import kz.shyngys.model.dto.LabelCreateRequestDto;
 import kz.shyngys.model.dto.PostCreateRequestDto;
 import kz.shyngys.model.dto.WriterCreateRequestDto;
@@ -19,7 +21,7 @@ public class Main {
 
 
     public static void main(String[] args) {
-//        WriterRepository writerRepository = new JdbcWriterRepositoryImpl();
+        WriterRepository writerRepository = new JdbcWriterRepositoryImpl();
 //        WriterService writerService = new WriterServiceImpl(writerRepository);
 //
 //        WriterCreateRequestDto request = new WriterCreateRequestDto();
@@ -41,17 +43,26 @@ public class Main {
 
 //        WriterService writerService = new WriterServiceImpl(writerRepository);
 //        writerService.deleteById(7L);
-        LabelRepository labelRepository = new JdbcLabelRepositoryImpl();
-        Label label = new Label();
-        label.setName("new label");
-        Label save = labelRepository.save(label);
-        System.out.println(save);
-        System.out.println(labelRepository.getById(save.getId()));
-        System.out.println(labelRepository.getAll().toString());
-        save.setName("updated label");
-        System.out.println(labelRepository.update(save));
-        labelRepository.deleteById(save);
-        System.out.println(labelRepository.getById(save.getId()));
+//        LabelRepository labelRepository = new JdbcLabelRepositoryImpl();
+//        Label label = new Label();
+//        label.setName("new label");
+//        Label save = labelRepository.save(label);
+//        System.out.println(save);
+//        System.out.println(labelRepository.getById(save.getId()));
+//        System.out.println(labelRepository.getAll().toString());
+//        save.setName("updated label");
+//        System.out.println(labelRepository.update(save));
+//        labelRepository.deleteById(save);
+//        System.out.println(labelRepository.getById(save.getId()));
+
+        Post post = new Post();
+        post.setContent("content");
+        post.setStatus(Status.ACTIVE);
+        Post post2 = new Post();
+        post2.setContent("content2");
+        post2.setStatus(Status.ACTIVE);
+        Writer writer = new Writer(22L, "123", "123", List.of(post, post2));
+        writerRepository.update(writer);
 
         DatabaseConnection.closeConnection();
     }

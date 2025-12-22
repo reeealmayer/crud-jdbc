@@ -133,15 +133,31 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE_WRITER_BY_ID)
         ) {
+            connection.setAutoCommit(false);
             preparedStatement.setString(1, writer.getFirstName());
             preparedStatement.setString(2, writer.getLastName());
             preparedStatement.setLong(3, writer.getId());
 
-            int affectedRows = preparedStatement.executeUpdate();
-            if (affectedRows == 0) {
-                throw new SQLException("Обновление writer не удалось, ни одна строка не затронута");
+            try {
+                int affectedRows = preparedStatement.executeUpdate();
+                if (affectedRows == 0) {
+                    throw new SQLException("Обновление writer не удалось, ни одна строка не затронута");
+                }
+
+                List<Post> posts = writer.getPosts();
+                if (!CollectionUtils.isEmpty(posts)) {
+                    writer.setPosts(savePosts(connection, writer.getId(), posts));
+                }
+                connection.commit();
+                return writer;
+            } catch (SQLException e) {
+                connection.rollback();
+
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
             }
-            return writer;
+
         } catch (SQLException e) {
             throw new RuntimeException("Ошибка SQL " + e.getMessage());
         }
@@ -202,6 +218,31 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
                     throw new SQLException("Создание post не удалось, id не получен");
                 }
             }
+        }
+    }
+
+    private List<Post> savePosts(Connection connection, Long writerId, List<Post> posts) throws SQLException {
+        try (
+                PreparedStatement preparedStatement
+                        = connection.prepareStatement(SQL_INSERT_POST, Statement.RETURN_GENERATED_KEYS)
+        ) {
+            for (Post post : posts) {
+                preparedStatement.setString(1, post.getContent());
+                preparedStatement.setString(2, post.getStatus().name());
+                preparedStatement.setLong(3, writerId);
+                preparedStatement.addBatch();
+            }
+
+            preparedStatement.executeBatch();
+
+            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                int index = 0;
+                while (generatedKeys.next() && index < posts.size()) {
+                    posts.get(index).setId(generatedKeys.getLong(1));
+                    index++;
+                }
+            }
+            return posts;
         }
     }
 
