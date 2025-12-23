@@ -7,11 +7,13 @@ import kz.shyngys.model.Post;
 import kz.shyngys.repository.PostRepository;
 import kz.shyngys.util.LabelMapper;
 import kz.shyngys.util.PostMapper;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +28,10 @@ public class JdbcPostRepositoryImpl implements PostRepository {
             " where p.id = ?";
     private final String SQL_GET_ALL_POSTS = "select p.id, p.content, p.created, p.updated, p.status from posts p where p.status = 'ACTIVE'";
     private final String SQL_DELETE_POST_BY_ID = "update posts set status = 'DELETED' where id = ?";
+    private final String SQL_INSERT_LABEL = "insert into labels (name) values (?) on duplicate key update name = name";
+    private final String SQL_GET_LABEL_BY_NAME = "select id from labels where name = ?";
+    private final String SQL_INSERT_POST_LABEL = "insert into post_labels (post_id, label_id) values (?, ?)";
+    private final String SQL_INSERT_POST = "insert into posts (content, status, writer_id) values (?, ?, ?)";
 
     @Override
     public Post getById(Long id) {
@@ -85,7 +91,28 @@ public class JdbcPostRepositoryImpl implements PostRepository {
 
     @Override
     public Post save(Post post) {
-        return null;
+        Connection connection = DatabaseUtils.getConnection();
+        try {
+            connection.setAutoCommit(false);
+            try {
+                Long postId = savePost(connection, post.getWriter().getId(), post);
+
+                if (!CollectionUtils.isEmpty(post.getLabels())) {
+                    savePostLabels(connection, postId, post.getLabels());
+                }
+
+                connection.commit();
+                connection.setAutoCommit(true);
+                post.setId(postId);
+                return post;
+            } catch (SQLException e) {
+                connection.rollback();
+                connection.setAutoCommit(true);
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
+        }
     }
 
     @Override
@@ -108,6 +135,68 @@ public class JdbcPostRepositoryImpl implements PostRepository {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Ошибка SQL: " + e);
+        }
+    }
+
+    private void savePostLabels(Connection connection, Long postId, List<Label> labels) throws SQLException {
+        for (Label label : labels) {
+            Long labelId = getOrCreateLabel(connection, label.getName());
+            label.setId(labelId);
+            linkPostLabel(connection, postId, labelId);
+        }
+    }
+
+    private Long savePost(Connection connection, Long writerId, Post post) throws SQLException {
+        try (
+                PreparedStatement preparedStatement
+                        = connection.prepareStatement(SQL_INSERT_POST, Statement.RETURN_GENERATED_KEYS)
+        ) {
+            preparedStatement.setString(1, post.getContent());
+            preparedStatement.setString(2, post.getStatus().name());
+            preparedStatement.setLong(3, writerId);
+
+            preparedStatement.executeUpdate();
+
+            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getLong(1);
+                } else {
+                    throw new SQLException("Создание post не удалось, id не получен");
+                }
+            }
+        }
+    }
+
+    private Long getOrCreateLabel(Connection connection, String name) throws SQLException {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_LABEL_BY_NAME)) {
+            preparedStatement.setString(1, name);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getLong("id");
+                }
+            }
+        }
+
+        try (PreparedStatement ps = connection.prepareStatement(
+                SQL_INSERT_LABEL,
+                Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, name);
+            ps.executeUpdate();
+
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    return keys.getLong(1);
+                }
+                throw new SQLException("Не удалось получить ID label");
+            }
+        }
+    }
+
+    private void linkPostLabel(Connection connection, Long postId, Long labelId) throws SQLException {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_INSERT_POST_LABEL)) {
+            preparedStatement.setLong(1, postId);
+            preparedStatement.setLong(2, labelId);
+            preparedStatement.executeUpdate();
         }
     }
 }
