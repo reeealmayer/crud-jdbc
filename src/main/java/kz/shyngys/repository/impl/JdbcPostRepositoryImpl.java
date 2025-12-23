@@ -32,6 +32,8 @@ public class JdbcPostRepositoryImpl implements PostRepository {
     private final String SQL_GET_LABEL_BY_NAME = "select id from labels where name = ?";
     private final String SQL_INSERT_POST_LABEL = "insert into post_labels (post_id, label_id) values (?, ?)";
     private final String SQL_INSERT_POST = "insert into posts (content, status, writer_id) values (?, ?, ?)";
+    private final String SQL_UPDATE_POST = "update posts set content = ?, status = ?, writer_id = ? where id = ?";
+    private final String SQL_DELETE_POST_LABELS = "delete from post_labels where post_id = ?";
 
     @Override
     public Post getById(Long id) {
@@ -117,7 +119,53 @@ public class JdbcPostRepositoryImpl implements PostRepository {
 
     @Override
     public Post update(Post post) {
-        return null;
+        Connection connection = DatabaseUtils.getConnection();
+        try {
+            connection.setAutoCommit(false);
+            try {
+                updatePost(connection, post);
+
+                if (!CollectionUtils.isEmpty(post.getLabels())) {
+                    deletePostLabels(connection, post.getId());
+                    savePostLabels(connection, post.getId(), post.getLabels());
+                }
+
+                connection.commit();
+                connection.setAutoCommit(true);
+                return post;
+            } catch (SQLException e) {
+                connection.rollback();
+                connection.setAutoCommit(true);
+                throw e;
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
+        }
+    }
+
+    private void updatePost(Connection connection, Post post) throws SQLException {
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE_POST)
+        ) {
+            preparedStatement.setString(1, post.getContent());
+            preparedStatement.setString(2, post.getStatus().name());
+            preparedStatement.setLong(3, post.getWriter().getId());
+            preparedStatement.setLong(4, post.getId());
+
+            int affectedRows = preparedStatement.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("Обновление post не удалось, ни одна строка не затронута");
+            }
+        }
+    }
+
+    private void deletePostLabels(Connection connection, Long postId) throws SQLException {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_DELETE_POST_LABELS)) {
+            preparedStatement.setLong(1, postId);
+            preparedStatement.executeUpdate();
+        }
     }
 
     @Override

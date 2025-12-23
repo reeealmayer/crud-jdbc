@@ -6,11 +6,7 @@ import kz.shyngys.model.Post;
 import kz.shyngys.model.Status;
 import kz.shyngys.model.Writer;
 import kz.shyngys.repository.PostRepository;
-import kz.shyngys.repository.WriterRepository;
 import kz.shyngys.repository.impl.JdbcPostRepositoryImpl;
-import kz.shyngys.repository.impl.JdbcWriterRepositoryImpl;
-import kz.shyngys.service.WriterService;
-import kz.shyngys.service.impl.WriterServiceImpl;
 
 import java.util.List;
 
@@ -26,16 +22,17 @@ public class Main {
         label1.setName("Игры");
 
         Label label2 = new Label();
-        label2.setName("Космос");
+        label2.setName("ФИЛЬМЫ");
 
 
         Post post = new Post();
+        post.setId(51L);
         post.setContent("Абсолютно новый пост");
         post.setWriter(writer);
-        post.setStatus(Status.UNDER_REVIEW);
+        post.setStatus(Status.ACTIVE);
         post.setLabels(List.of(label1, label2));
 
-        System.out.println(postRepository.save(post));
+        System.out.println(postRepository.update(post));
 
         DatabaseUtils.closeConnection();
     }
