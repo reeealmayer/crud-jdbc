@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostShortResponseDto {
+public class PostShortDto {
     private Long id;
-    private String text;
+    private String content;
     private Status status;
 }

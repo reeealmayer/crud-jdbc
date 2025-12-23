@@ -7,7 +7,9 @@ import kz.shyngys.model.Status;
 import kz.shyngys.model.Writer;
 import kz.shyngys.model.dto.LabelCreateRequestDto;
 import kz.shyngys.model.dto.PostCreateRequestDto;
+import kz.shyngys.model.dto.PostShortDto;
 import kz.shyngys.model.dto.WriterCreateRequestDto;
+import kz.shyngys.model.dto.WriterUpdateRequestDto;
 import kz.shyngys.repository.LabelRepository;
 import kz.shyngys.repository.impl.JdbcLabelRepositoryImpl;
 import kz.shyngys.repository.impl.JdbcWriterRepositoryImpl;
@@ -22,7 +24,7 @@ public class Main {
 
     public static void main(String[] args) {
         WriterRepository writerRepository = new JdbcWriterRepositoryImpl();
-//        WriterService writerService = new WriterServiceImpl(writerRepository);
+        WriterService writerService = new WriterServiceImpl(writerRepository);
 //
 //        WriterCreateRequestDto request = new WriterCreateRequestDto();
 //        request.setFirstName("new");
@@ -55,14 +57,13 @@ public class Main {
 //        labelRepository.deleteById(save);
 //        System.out.println(labelRepository.getById(save.getId()));
 
-        Post post = new Post();
-        post.setContent("content");
-        post.setStatus(Status.ACTIVE);
-        Post post2 = new Post();
-        post2.setContent("content2");
-        post2.setStatus(Status.ACTIVE);
-        Writer writer = new Writer(22L, "123", "123", List.of(post, post2));
-        writerRepository.update(writer);
+        PostShortDto post1 = new PostShortDto(null, "content3", Status.ACTIVE);
+        PostShortDto post2 = new PostShortDto(null, "content4", Status.ACTIVE);
+        List<PostShortDto> posts = List.of(post1, post2);
+        WriterUpdateRequestDto writerUpdateRequestDto = new WriterUpdateRequestDto(22L, "newname", "newlastname", posts);
+        writerService.update(writerUpdateRequestDto);
+
+        writerService.deleteById(22L);
 
         DatabaseConnection.closeConnection();
     }

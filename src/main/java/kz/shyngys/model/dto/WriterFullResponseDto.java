@@ -13,5 +13,5 @@ public class WriterFullResponseDto {
     private Long id;
     private String firstName;
     private String lastName;
-    private List<PostShortResponseDto> posts;
+    private List<PostShortDto> posts;
 }

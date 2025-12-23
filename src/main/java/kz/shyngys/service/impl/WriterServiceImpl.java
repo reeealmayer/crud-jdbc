@@ -40,10 +40,7 @@ public class WriterServiceImpl implements WriterService {
 
     @Override
     public WriterShortResponseDto update(WriterUpdateRequestDto requestDto) {
-        Writer writer = new Writer();
-        writer.setId(requestDto.getId());
-        writer.setFirstName(requestDto.getFirstName());
-        writer.setLastName(requestDto.getLastName());
+        Writer writer = Mapper.toWriter(requestDto);
         Writer updatedWriter = writerRepository.update(writer);
         return WriterShortResponseDto.mapFromEntity(updatedWriter);
     }

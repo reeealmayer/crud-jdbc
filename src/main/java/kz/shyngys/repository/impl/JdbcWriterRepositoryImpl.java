@@ -65,7 +65,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
                 return writer;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL " + e.getMessage());
+            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
         }
     }
 
@@ -90,7 +90,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
                 return writers;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL " + e.getMessage());
+            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
         }
     }
 
@@ -123,7 +123,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
                 throw e;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL " + e.getMessage());
+            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
         }
     }
 
@@ -152,14 +152,13 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
                 return writer;
             } catch (SQLException e) {
                 connection.rollback();
-
                 throw e;
             } finally {
                 connection.setAutoCommit(true);
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL " + e.getMessage());
+            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
         }
     }
 
@@ -176,7 +175,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
                 throw new SQLException("Удаление writer не удалось, ни одна строка не затронута");
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL " + e.getMessage());
+            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
         }
     }
 
