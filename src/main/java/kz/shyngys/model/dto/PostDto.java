@@ -1,5 +1,6 @@
 package kz.shyngys.model.dto;
 
+import kz.shyngys.model.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,7 +16,7 @@ public class PostDto {
     private String content;
     private LocalDateTime created;
     private LocalDateTime updated;
-    private String status;
+    private Status status;
     private Long writerId;
     private List<LabelDto> labels;
 }

@@ -52,7 +52,7 @@ public class PostMapper {
         }
 
         if (dto.getStatus() != null) {
-            post.setStatus(Status.valueOf(dto.getStatus()));
+            post.setStatus(dto.getStatus());
         }
 
         if (dto.getWriterId() != null) {
@@ -80,7 +80,6 @@ public class PostMapper {
                     .collect(Collectors.toList());
         }
 
-        String statusStr = post.getStatus() != null ? post.getStatus().name() : null;
         Long writerId = post.getWriter() != null ? post.getWriter().getId() : null;
 
         return new PostDto(
@@ -88,7 +87,7 @@ public class PostMapper {
                 post.getContent(),
                 post.getCreated(),
                 post.getUpdated(),
-                statusStr,
+                post.getStatus(),
                 writerId,
                 labelDtos
         );

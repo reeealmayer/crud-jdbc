@@ -1,6 +1,7 @@
 package kz.shyngys;
 
 import kz.shyngys.db.DatabaseUtils;
+import kz.shyngys.model.Status;
 import kz.shyngys.model.dto.PostDto;
 import kz.shyngys.model.dto.WriterFullDto;
 import kz.shyngys.repository.LabelRepository;
@@ -25,11 +26,11 @@ public class Main {
         PostDto postDto = new PostDto();
         postDto.setId(44L);
         postDto.setContent("new content");
-        postDto.setStatus("ACTIVE");
+        postDto.setStatus(Status.ACTIVE);
         postDto.setWriterId(writerFullDto.getId());
         PostDto postDto1 = new PostDto();
         postDto1.setContent("ASDASDDSA");
-        postDto1.setStatus("ACTIVE");
+        postDto1.setStatus(Status.ACTIVE);
         writerFullDto.setPosts(List.of(postDto, postDto1));
         System.out.println(writerService.update(writerFullDto));
 
