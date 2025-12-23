@@ -1,6 +1,6 @@
 package kz.shyngys.repository.impl;
 
-import kz.shyngys.db.DatabaseConnection;
+import kz.shyngys.db.DatabaseUtils;
 import kz.shyngys.exception.NotFoundException;
 import kz.shyngys.model.Label;
 import kz.shyngys.repository.LabelRepository;
@@ -23,7 +23,7 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
 
     @Override
     public Label getById(Long id) {
-        Connection connection = DatabaseConnection.getInstance();
+        Connection connection = DatabaseUtils.getInstance();
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_LABEL_BY_ID)
         ) {
@@ -52,7 +52,7 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
 
     @Override
     public List<Label> getAll() {
-        Connection connection = DatabaseConnection.getInstance();
+        Connection connection = DatabaseUtils.getInstance();
         try (
                 Statement statement = connection.createStatement()
         ) {
@@ -73,7 +73,7 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
 
     @Override
     public Label save(Label label) {
-        Connection connection = DatabaseConnection.getInstance();
+        Connection connection = DatabaseUtils.getInstance();
         try (
                 PreparedStatement preparedStatement
                         = connection.prepareStatement(SQL_INSERT_LABEL, Statement.RETURN_GENERATED_KEYS)
@@ -99,7 +99,7 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
 
     @Override
     public Label update(Label label) {
-        Connection connection = DatabaseConnection.getInstance();
+        Connection connection = DatabaseUtils.getInstance();
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE_LABEL_BY_ID)
         ) {
@@ -118,7 +118,7 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
 
     @Override
     public void deleteById(Label label) {
-        Connection connection = DatabaseConnection.getInstance();
+        Connection connection = DatabaseUtils.getInstance();
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement(SQl_DELETE_LABEL_BY_ID)
         ) {

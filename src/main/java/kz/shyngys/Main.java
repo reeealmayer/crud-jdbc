@@ -1,17 +1,9 @@
 package kz.shyngys;
 
-import kz.shyngys.db.DatabaseConnection;
-import kz.shyngys.model.Label;
-import kz.shyngys.model.Post;
+import kz.shyngys.db.DatabaseUtils;
 import kz.shyngys.model.Status;
-import kz.shyngys.model.Writer;
-import kz.shyngys.model.dto.LabelCreateRequestDto;
-import kz.shyngys.model.dto.PostCreateRequestDto;
 import kz.shyngys.model.dto.PostShortDto;
-import kz.shyngys.model.dto.WriterCreateRequestDto;
 import kz.shyngys.model.dto.WriterUpdateRequestDto;
-import kz.shyngys.repository.LabelRepository;
-import kz.shyngys.repository.impl.JdbcLabelRepositoryImpl;
 import kz.shyngys.repository.impl.JdbcWriterRepositoryImpl;
 import kz.shyngys.repository.WriterRepository;
 import kz.shyngys.service.WriterService;
@@ -64,6 +56,6 @@ public class Main {
         writerService.update(writerUpdateRequestDto);
 
 
-        DatabaseConnection.closeConnection();
+        DatabaseUtils.closeConnection();
     }
 }

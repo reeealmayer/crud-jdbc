@@ -2,13 +2,12 @@ package kz.shyngys.db;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class DatabaseConnection {
+public class DatabaseUtils {
     private static Connection connection;
 
-    private DatabaseConnection() {
+    private DatabaseUtils() {
     }
 
     public static Connection getInstance() {

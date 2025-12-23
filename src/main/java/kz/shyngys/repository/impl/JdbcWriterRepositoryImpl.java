@@ -1,6 +1,6 @@
 package kz.shyngys.repository.impl;
 
-import kz.shyngys.db.DatabaseConnection;
+import kz.shyngys.db.DatabaseUtils;
 import kz.shyngys.exception.NotFoundException;
 import kz.shyngys.model.Label;
 import kz.shyngys.model.Post;
@@ -40,7 +40,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
 
     @Override
     public Writer getById(Long id) {
-        Connection connection = DatabaseConnection.getInstance();
+        Connection connection = DatabaseUtils.getInstance();
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_WRITER_WITH_POSTS_BY_ID)
         ) {
@@ -73,7 +73,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
 
     @Override
     public List<Writer> getAll() {
-        Connection connection = DatabaseConnection.getInstance();
+        Connection connection = DatabaseUtils.getInstance();
         try (
                 Statement statement = connection.createStatement()
         ) {
@@ -98,7 +98,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
 
     @Override
     public Writer save(Writer writer) {
-        Connection connection = DatabaseConnection.getInstance();
+        Connection connection = DatabaseUtils.getInstance();
         try {
             connection.setAutoCommit(false);
             try {
@@ -131,7 +131,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
 
     @Override
     public Writer update(Writer writer) {
-        Connection connection = DatabaseConnection.getInstance();
+        Connection connection = DatabaseUtils.getInstance();
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE_WRITER_BY_ID)
         ) {
@@ -166,7 +166,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
 
     @Override
     public void deleteById(Writer writer) {
-        Connection connection = DatabaseConnection.getInstance();
+        Connection connection = DatabaseUtils.getInstance();
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement(SQL_DELETE_WRITER_BY_ID)
         ) {
