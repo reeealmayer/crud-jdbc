@@ -91,6 +91,11 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
         }
     }
 
+    /**
+     * Сохраняются посты, лейблы и создаются записи в post_labels
+     * @param writer
+     * @return
+     */
     @Override
     public Writer save(Writer writer) {
         Connection connection = DatabaseUtils.getConnection();
@@ -124,6 +129,13 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
         }
     }
 
+    /**
+     * Если есть список постов, то следующая логика:
+     * - если у поста есть id, то он изменяется в бд
+     * - если у поста нет id, то он добавляется к писателю
+     * @param writer
+     * @return Writer
+     */
     @Override
     public Writer update(Writer writer) {
         Connection connection = DatabaseUtils.getConnection();
