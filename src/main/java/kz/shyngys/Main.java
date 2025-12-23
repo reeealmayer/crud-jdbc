@@ -1,6 +1,7 @@
 package kz.shyngys;
 
 import kz.shyngys.db.DatabaseUtils;
+import kz.shyngys.model.Post;
 import kz.shyngys.model.Status;
 import kz.shyngys.model.dto.PostShortDto;
 import kz.shyngys.model.dto.WriterUpdateRequestDto;
@@ -60,6 +61,9 @@ public class Main {
 //        List<PostShortDto> posts = List.of(post1, post2);
 //        WriterUpdateRequestDto writerUpdateRequestDto = new WriterUpdateRequestDto(23L, "newname", "newlastname", posts);
 //        writerService.update(writerUpdateRequestDto);
+        Post t = new Post();
+        t.setId(44L);
+        postRepository.deleteById(t);
         System.out.println(postRepository.getAll().toString());
         DatabaseUtils.closeConnection();
     }

@@ -24,7 +24,8 @@ public class JdbcPostRepositoryImpl implements PostRepository {
             " left join labels l " +
             " on l.id = pl.label_id " +
             " where p.id = ?";
-    private final String SQL_GET_ALL_POSTS = "select p.id, p.content, p.created, p.updated, p.status from posts p";
+    private final String SQL_GET_ALL_POSTS = "select p.id, p.content, p.created, p.updated, p.status from posts p where p.status = 'ACTIVE'";
+    private final String SQL_DELETE_POST_BY_ID = "update posts set status = 'DELETED' where id = ?";
 
     @Override
     public Post getById(Long id) {
@@ -94,6 +95,19 @@ public class JdbcPostRepositoryImpl implements PostRepository {
 
     @Override
     public void deleteById(Post post) {
+        Connection connection = DatabaseUtils.getConnection();
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement(SQL_DELETE_POST_BY_ID)
+        ) {
+            preparedStatement.setLong(1, post.getId());
 
+            int affectedRows = preparedStatement.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("Удаление post не удалось, ни одна строка не затронута");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка SQL: " + e);
+        }
     }
 }
