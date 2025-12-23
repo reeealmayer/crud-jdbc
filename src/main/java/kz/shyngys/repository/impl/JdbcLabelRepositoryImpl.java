@@ -3,7 +3,10 @@ package kz.shyngys.repository.impl;
 import kz.shyngys.db.DatabaseUtils;
 import kz.shyngys.exception.NotFoundException;
 import kz.shyngys.model.Label;
+import kz.shyngys.model.Post;
 import kz.shyngys.repository.LabelRepository;
+import kz.shyngys.util.LabelMapper;
+import kz.shyngys.util.PostMapper;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,8 +18,15 @@ import java.util.List;
 
 public class JdbcLabelRepositoryImpl implements LabelRepository {
 
-    private final String SQL_GET_LABEL_BY_ID = "select * from labels where id = ?";
-    private final String SQL_GET_ALL_LABELS = "select * from labels";
+    private final String SQL_GET_LABEL_BY_ID = "select l.id, l.name, " +
+            " p.id, p.content, p.created, p.updated, p.status " +
+            " from labels l " +
+            " left join post_labels  pl " +
+            " on l.id = pl.label_id " +
+            " left join posts p " +
+            " on p.id = pl.post_id " +
+            " where l.id = ? and p.status = 'ACTIVE'";
+    private final String SQL_GET_ALL_LABELS = "select l.id, l.name from labels l";
     private final String SQL_INSERT_LABEL = "insert into labels (name) values (?)";
     private final String SQL_UPDATE_LABEL_BY_ID = "update labels set name = ? where id = ?";
     private final String SQl_DELETE_LABEL_BY_ID = "delete from labels where id = ?";
@@ -30,24 +40,24 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
             preparedStatement.setLong(1, id);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 Label label = null;
-                if (resultSet.next()) {
-                    label = mapToLabel(resultSet);
+                List<Post> posts = new ArrayList<>();
+                while (resultSet.next()) {
+                    if (label == null) {
+                        label = LabelMapper.toLabel(resultSet);
+                    }
+
+                    Post post = PostMapper.toPost(resultSet);
+                    posts.add(post);
                 }
                 if (label == null) {
                     throw new NotFoundException("Label не найден с id " + id);
                 }
+                label.setPost(posts);
                 return label;
             }
         } catch (SQLException e) {
             throw new RuntimeException("Ошибка SQL: " + e);
         }
-    }
-
-    private Label mapToLabel(ResultSet resultSet) throws SQLException {
-        Label label = new Label();
-        label.setId(resultSet.getLong("id"));
-        label.setName(resultSet.getString("name"));
-        return label;
     }
 
     @Override
@@ -59,7 +69,7 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
             try (ResultSet resultSet = statement.executeQuery(SQL_GET_ALL_LABELS)) {
                 List<Label> labels = new ArrayList<>();
                 while (resultSet.next()) {
-                    labels.add(mapToLabel(resultSet));
+                    labels.add(LabelMapper.toLabel(resultSet));
                 }
                 if (labels.isEmpty()) {
                     throw new NotFoundException("В таблице labels нет записей");

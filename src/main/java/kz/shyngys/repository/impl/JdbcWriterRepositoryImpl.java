@@ -4,7 +4,6 @@ import kz.shyngys.db.DatabaseUtils;
 import kz.shyngys.exception.NotFoundException;
 import kz.shyngys.model.Label;
 import kz.shyngys.model.Post;
-import kz.shyngys.model.Status;
 import kz.shyngys.model.Writer;
 import kz.shyngys.repository.WriterRepository;
 import kz.shyngys.util.PostMapper;
@@ -16,13 +15,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class JdbcWriterRepositoryImpl implements WriterRepository {
-
 
     private final String SQL_GET_WRITER_WITH_POSTS_BY_ID = "select w.id, w.first_name, w.last_name, p.id, p.content, p.created, p.updated, p.status " +
             " from writers w " +
@@ -38,7 +34,6 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
     private final String SQL_INSERT_LABEL = "insert into labels (name) values (?) on duplicate key update name = name";
     private final String SQL_GET_LABEL_BY_NAME = "select id from labels where name = ?";
     private final String SQL_INSERT_POST_LABEL = "insert into post_labels (post_id, label_id) values (?, ?)";
-    private final String SQL_GET_POST_BY_ID = "select * from posts where id = ?";
 
     @Override
     public Writer getById(Long id) {
