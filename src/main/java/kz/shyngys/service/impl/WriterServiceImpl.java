@@ -43,7 +43,7 @@ public class WriterServiceImpl implements WriterService {
     }
 
     @Override
-    public void delete(Long id) {
+    public void deleteById(Long id) {
         Writer writer = writerRepository.getById(id);
         writerRepository.deleteById(writer);
     }

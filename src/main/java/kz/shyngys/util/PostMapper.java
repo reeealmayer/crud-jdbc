@@ -29,7 +29,7 @@ public class PostMapper {
         }
         Timestamp updatedTimestamp = resultSet.getTimestamp("p.updated");
         if (Objects.nonNull(updatedTimestamp)) {
-            post.setCreated(updatedTimestamp.toLocalDateTime());
+            post.setUpdated(updatedTimestamp.toLocalDateTime());
         }
         String statusName = resultSet.getString("p.status");
         if (statusName != null) {
