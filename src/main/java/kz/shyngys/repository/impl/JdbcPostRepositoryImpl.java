@@ -24,6 +24,7 @@ public class JdbcPostRepositoryImpl implements PostRepository {
             " left join labels l " +
             " on l.id = pl.label_id " +
             " where p.id = ?";
+    private final String SQL_GET_ALL_POSTS = "select p.id, p.content, p.created, p.updated, p.status from posts p";
 
     @Override
     public Post getById(Long id) {
@@ -38,7 +39,7 @@ public class JdbcPostRepositoryImpl implements PostRepository {
                 Post post = null;
                 List<Label> labels = new ArrayList<>();
 
-                while(resultSet.next()) {
+                while (resultSet.next()) {
                     if (post == null) {
                         post = PostMapper.toPost(resultSet);
                     }
@@ -61,7 +62,24 @@ public class JdbcPostRepositoryImpl implements PostRepository {
 
     @Override
     public List<Post> getAll() {
-        return List.of();
+        Connection connection = DatabaseUtils.getConnection();
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_ALL_POSTS)
+        ) {
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                List<Post> posts = new ArrayList<>();
+                while (resultSet.next()) {
+                    Post post = PostMapper.toPost(resultSet);
+                    posts.add(post);
+                }
+                if (posts.isEmpty()) {
+                    throw new SQLException("В таблице posts нет записей");
+                }
+                return posts;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка SQL: " + e);
+        }
     }
 
     @Override

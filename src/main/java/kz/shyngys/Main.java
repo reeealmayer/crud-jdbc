@@ -60,8 +60,7 @@ public class Main {
 //        List<PostShortDto> posts = List.of(post1, post2);
 //        WriterUpdateRequestDto writerUpdateRequestDto = new WriterUpdateRequestDto(23L, "newname", "newlastname", posts);
 //        writerService.update(writerUpdateRequestDto);
-
-        System.out.println(postRepository.getById(43L));
+        System.out.println(postRepository.getAll().toString());
         DatabaseUtils.closeConnection();
     }
 }
