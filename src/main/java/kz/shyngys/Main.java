@@ -58,12 +58,11 @@ public class Main {
 //        System.out.println(labelRepository.getById(save.getId()));
 
         PostShortDto post1 = new PostShortDto(null, "content3", Status.ACTIVE);
-        PostShortDto post2 = new PostShortDto(null, "content4", Status.ACTIVE);
+        PostShortDto post2 = new PostShortDto(43L, "asdsad", Status.ACTIVE);
         List<PostShortDto> posts = List.of(post1, post2);
-        WriterUpdateRequestDto writerUpdateRequestDto = new WriterUpdateRequestDto(22L, "newname", "newlastname", posts);
+        WriterUpdateRequestDto writerUpdateRequestDto = new WriterUpdateRequestDto(23L, "newname", "newlastname", posts);
         writerService.update(writerUpdateRequestDto);
 
-        writerService.deleteById(22L);
 
         DatabaseConnection.closeConnection();
     }

@@ -32,9 +32,11 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
     private final String SQL_UPDATE_WRITER_BY_ID = "update writers set first_name = ?, last_name = ? where id = ?";
     private final String SQL_DELETE_WRITER_BY_ID = "delete from writers where id = ?";
     private final String SQL_INSERT_POST = "insert into posts (content, status, writer_id) values (?, ?, ?)";
+    private final String SQL_UPDATE_POST = "update posts set content = ?, status = ? where id = ?";
     private final String SQL_INSERT_LABEL = "insert into labels (name) values (?) on duplicate key update name = name";
     private final String SQL_GET_LABEL_BY_NAME = "select id from labels where name = ?";
     private final String SQL_INSERT_POST_LABEL = "insert into post_labels (post_id, label_id) values (?, ?)";
+    private final String SQL_GET_POST_BY_ID = "select * from posts where id = ?";
 
     @Override
     public Writer getById(Long id) {
@@ -141,7 +143,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
             try {
                 int affectedRows = preparedStatement.executeUpdate();
                 if (affectedRows == 0) {
-                    throw new SQLException("Обновление writer не удалось, ни одна строка не затронута");
+                    throw new SQLException("Обновление writer не удалось, ни одна строка не затронута  для id: " + writer.getId());
                 }
 
                 List<Post> posts = writer.getPosts();
@@ -222,19 +224,28 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
 
     private List<Post> savePosts(Connection connection, Long writerId, List<Post> posts) throws SQLException {
         try (
-                PreparedStatement preparedStatement
-                        = connection.prepareStatement(SQL_INSERT_POST, Statement.RETURN_GENERATED_KEYS)
+                PreparedStatement preparedStatementForInsertPost
+                        = connection.prepareStatement(SQL_INSERT_POST, Statement.RETURN_GENERATED_KEYS);
+                PreparedStatement preparedStatementForUpdatePost = connection.prepareStatement(SQL_UPDATE_POST)
         ) {
             for (Post post : posts) {
-                preparedStatement.setString(1, post.getContent());
-                preparedStatement.setString(2, post.getStatus().name());
-                preparedStatement.setLong(3, writerId);
-                preparedStatement.addBatch();
+                if (post.getId() != null) {
+                    preparedStatementForUpdatePost.setString(1, post.getContent());
+                    preparedStatementForUpdatePost.setString(2, post.getStatus().name());
+                    preparedStatementForUpdatePost.setLong(3, post.getId());
+                    preparedStatementForUpdatePost.addBatch();
+                } else {
+                    preparedStatementForInsertPost.setString(1, post.getContent());
+                    preparedStatementForInsertPost.setString(2, post.getStatus().name());
+                    preparedStatementForInsertPost.setLong(3, writerId);
+                    preparedStatementForInsertPost.addBatch();
+                }
             }
 
-            preparedStatement.executeBatch();
+            preparedStatementForInsertPost.executeBatch();
+            preparedStatementForUpdatePost.executeBatch();
 
-            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+            try (ResultSet generatedKeys = preparedStatementForInsertPost.getGeneratedKeys()) {
                 int index = 0;
                 while (generatedKeys.next() && index < posts.size()) {
                     posts.get(index).setId(generatedKeys.getLong(1));
