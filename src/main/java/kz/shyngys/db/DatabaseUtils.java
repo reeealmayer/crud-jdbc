@@ -10,7 +10,7 @@ public class DatabaseUtils {
     private DatabaseUtils() {
     }
 
-    public static Connection getInstance() {
+    public static Connection getConnection() {
         if (connection == null) {
             try {
                 connection = DriverManager.getConnection(DatabaseProperties.URL,

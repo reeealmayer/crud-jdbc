@@ -1,8 +1,18 @@
 package kz.shyngys.repository.impl;
 
+import kz.shyngys.db.DatabaseUtils;
+import kz.shyngys.exception.NotFoundException;
+import kz.shyngys.model.Label;
 import kz.shyngys.model.Post;
 import kz.shyngys.repository.PostRepository;
+import kz.shyngys.util.LabelMapper;
+import kz.shyngys.util.PostMapper;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcPostRepositoryImpl implements PostRepository {
@@ -16,8 +26,37 @@ public class JdbcPostRepositoryImpl implements PostRepository {
             " where p.id = ?";
 
     @Override
-    public Post getById(Long aLong) {
-        return null;
+    public Post getById(Long id) {
+        Connection connection = DatabaseUtils.getConnection();
+        try (
+                PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_POST_BY_ID)
+        ) {
+            preparedStatement.setLong(1, id);
+            try (
+                    ResultSet resultSet = preparedStatement.executeQuery()
+            ) {
+                Post post = null;
+                List<Label> labels = new ArrayList<>();
+
+                while(resultSet.next()) {
+                    if (post == null) {
+                        post = PostMapper.toPost(resultSet);
+                    }
+
+                    Label label = LabelMapper.toLabel(resultSet);
+                    if (label.getId() != 0L) {
+                        labels.add(label);
+                    }
+                }
+                if (post == null) {
+                    throw new NotFoundException("Post не найден с id: " + id);
+                }
+                post.setLabels(labels);
+                return post;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка SQL: " + e);
+        }
     }
 
     @Override

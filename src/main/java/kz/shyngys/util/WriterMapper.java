@@ -9,6 +9,8 @@ import kz.shyngys.model.dto.WriterFullResponseDto;
 import kz.shyngys.model.dto.WriterUpdateRequestDto;
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 public class WriterMapper {
@@ -51,5 +53,13 @@ public class WriterMapper {
             writerFullResponseDto.setPosts(postShortDtos);
         }
         return writerFullResponseDto;
+    }
+
+    public static Writer toWriter(ResultSet resultSet) throws SQLException {
+        Writer writer = new Writer();
+        writer.setId(resultSet.getLong("w.id"));
+        writer.setFirstName(resultSet.getString("w.first_name"));
+        writer.setLastName(resultSet.getString("w.last_name"));
+        return writer;
     }
 }

@@ -4,6 +4,10 @@ import kz.shyngys.db.DatabaseUtils;
 import kz.shyngys.model.Status;
 import kz.shyngys.model.dto.PostShortDto;
 import kz.shyngys.model.dto.WriterUpdateRequestDto;
+import kz.shyngys.repository.LabelRepository;
+import kz.shyngys.repository.PostRepository;
+import kz.shyngys.repository.impl.JdbcLabelRepositoryImpl;
+import kz.shyngys.repository.impl.JdbcPostRepositoryImpl;
 import kz.shyngys.repository.impl.JdbcWriterRepositoryImpl;
 import kz.shyngys.repository.WriterRepository;
 import kz.shyngys.service.WriterService;
@@ -17,6 +21,8 @@ public class Main {
     public static void main(String[] args) {
         WriterRepository writerRepository = new JdbcWriterRepositoryImpl();
         WriterService writerService = new WriterServiceImpl(writerRepository);
+
+        PostRepository postRepository = new JdbcPostRepositoryImpl();
 //
 //        WriterCreateRequestDto request = new WriterCreateRequestDto();
 //        request.setFirstName("new");
@@ -49,13 +55,13 @@ public class Main {
 //        labelRepository.deleteById(save);
 //        System.out.println(labelRepository.getById(save.getId()));
 
-        PostShortDto post1 = new PostShortDto(null, "content3", Status.ACTIVE);
-        PostShortDto post2 = new PostShortDto(43L, "asdsad", Status.ACTIVE);
-        List<PostShortDto> posts = List.of(post1, post2);
-        WriterUpdateRequestDto writerUpdateRequestDto = new WriterUpdateRequestDto(23L, "newname", "newlastname", posts);
-        writerService.update(writerUpdateRequestDto);
+//        PostShortDto post1 = new PostShortDto(null, "content3", Status.ACTIVE);
+//        PostShortDto post2 = new PostShortDto(43L, "asdsad", Status.ACTIVE);
+//        List<PostShortDto> posts = List.of(post1, post2);
+//        WriterUpdateRequestDto writerUpdateRequestDto = new WriterUpdateRequestDto(23L, "newname", "newlastname", posts);
+//        writerService.update(writerUpdateRequestDto);
 
-
+        System.out.println(postRepository.getById(43L));
         DatabaseUtils.closeConnection();
     }
 }

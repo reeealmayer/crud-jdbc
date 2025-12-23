@@ -7,6 +7,8 @@ import kz.shyngys.model.Post;
 import kz.shyngys.model.Status;
 import kz.shyngys.model.Writer;
 import kz.shyngys.repository.WriterRepository;
+import kz.shyngys.util.PostMapper;
+import kz.shyngys.util.WriterMapper;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.sql.Connection;
@@ -40,7 +42,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
 
     @Override
     public Writer getById(Long id) {
-        Connection connection = DatabaseUtils.getInstance();
+        Connection connection = DatabaseUtils.getConnection();
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_WRITER_WITH_POSTS_BY_ID)
         ) {
@@ -51,10 +53,10 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
 
                 while (resultSet.next()) {
                     if (writer == null) {
-                        writer = mapToWriter(resultSet);
+                        writer = WriterMapper.toWriter(resultSet);
                     }
 
-                    Post post = mapToPost(resultSet);
+                    Post post = PostMapper.toPost(resultSet);
                     if (post.getId() != 0L) {
                         posts.add(post);
                     }
@@ -73,7 +75,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
 
     @Override
     public List<Writer> getAll() {
-        Connection connection = DatabaseUtils.getInstance();
+        Connection connection = DatabaseUtils.getConnection();
         try (
                 Statement statement = connection.createStatement()
         ) {
@@ -81,10 +83,8 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
             try (ResultSet resultSet = statement.executeQuery(SQL_GET_ALL_WRITERS)) {
                 List<Writer> writers = new ArrayList<>();
                 while (resultSet.next()) {
-                    Writer writer = mapToWriter(resultSet);
-                    if (writer != null) {
-                        writers.add(writer);
-                    }
+                    Writer writer = WriterMapper.toWriter(resultSet);
+                    writers.add(writer);
                 }
                 if (writers.isEmpty()) {
                     throw new NotFoundException("В таблице writers нет записей");
@@ -98,7 +98,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
 
     @Override
     public Writer save(Writer writer) {
-        Connection connection = DatabaseUtils.getInstance();
+        Connection connection = DatabaseUtils.getConnection();
         try {
             connection.setAutoCommit(false);
             try {
@@ -131,7 +131,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
 
     @Override
     public Writer update(Writer writer) {
-        Connection connection = DatabaseUtils.getInstance();
+        Connection connection = DatabaseUtils.getConnection();
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE_WRITER_BY_ID)
         ) {
@@ -166,7 +166,7 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
 
     @Override
     public void deleteById(Writer writer) {
-        Connection connection = DatabaseUtils.getInstance();
+        Connection connection = DatabaseUtils.getConnection();
         try (
                 PreparedStatement preparedStatement = connection.prepareStatement(SQL_DELETE_WRITER_BY_ID)
         ) {
@@ -295,32 +295,5 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
             preparedStatement.setLong(2, labelId);
             preparedStatement.executeUpdate();
         }
-    }
-
-    private Post mapToPost(ResultSet resultSet) throws SQLException {
-        Post post = new Post();
-        post.setId(resultSet.getLong("p.id"));
-        post.setContent(resultSet.getString("p.content"));
-        Timestamp createdTimestamp = resultSet.getTimestamp("p.created");
-        if (Objects.nonNull(createdTimestamp)) {
-            post.setCreated(createdTimestamp.toLocalDateTime());
-        }
-        Timestamp updatedTimestamp = resultSet.getTimestamp("p.updated");
-        if (Objects.nonNull(updatedTimestamp)) {
-            post.setCreated(updatedTimestamp.toLocalDateTime());
-        }
-        String statusName = resultSet.getString("p.status");
-        if (statusName != null) {
-            post.setStatus(Status.valueOf(statusName));
-        }
-        return post;
-    }
-
-    private Writer mapToWriter(ResultSet resultSet) throws SQLException {
-        Writer writer = new Writer();
-        writer.setId(resultSet.getLong("w.id"));
-        writer.setFirstName(resultSet.getString("w.first_name"));
-        writer.setLastName(resultSet.getString("w.last_name"));
-        return writer;
     }
 }
