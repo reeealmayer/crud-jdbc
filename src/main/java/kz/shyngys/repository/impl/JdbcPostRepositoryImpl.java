@@ -4,9 +4,11 @@ import kz.shyngys.db.DatabaseUtils;
 import kz.shyngys.exception.NotFoundException;
 import kz.shyngys.model.Label;
 import kz.shyngys.model.Post;
+import kz.shyngys.model.Writer;
 import kz.shyngys.repository.PostRepository;
 import kz.shyngys.util.LabelMapper;
 import kz.shyngys.util.PostMapper;
+import kz.shyngys.util.WriterMapper;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.sql.Connection;
@@ -18,13 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcPostRepositoryImpl implements PostRepository {
-    private final String SQL_GET_POST_BY_ID = " select p.id, p.content, p.created, p.updated, p.status, " +
-            " l.id, l.name " +
+    private final String SQL_GET_POST_BY_ID = " select p.id, p.content, p.created, p.updated, p.status," +
+            " l.id, l.name, " +
+            " w.id, w.first_name, w.last_name " +
             " from posts p " +
             " left join post_labels pl " +
             " on p.id = pl.post_id " +
             " left join labels l " +
             " on l.id = pl.label_id " +
+            " left join writers w " +
+            " on p.writer_id = w.id " +
             " where p.id = ?";
     private final String SQL_GET_ALL_POSTS = "select p.id, p.content, p.created, p.updated, p.status from posts p where p.status = 'ACTIVE'";
     private final String SQL_DELETE_POST_BY_ID = "update posts set status = 'DELETED' where id = ?";
@@ -46,11 +51,16 @@ public class JdbcPostRepositoryImpl implements PostRepository {
                     ResultSet resultSet = preparedStatement.executeQuery()
             ) {
                 Post post = null;
+                Writer writer = null;
                 List<Label> labels = new ArrayList<>();
 
                 while (resultSet.next()) {
                     if (post == null) {
                         post = PostMapper.toPost(resultSet);
+                    }
+
+                    if (writer == null) {
+                        writer = WriterMapper.toWriter(resultSet);
                     }
 
                     Label label = LabelMapper.toLabel(resultSet);
@@ -61,6 +71,7 @@ public class JdbcPostRepositoryImpl implements PostRepository {
                 if (post == null) {
                     throw new NotFoundException("Post не найден с id: " + id);
                 }
+                post.setWriter(writer);
                 post.setLabels(labels);
                 return post;
             }
