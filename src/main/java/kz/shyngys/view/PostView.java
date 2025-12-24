@@ -142,7 +142,11 @@ public class PostView {
 
         List<LabelDto> labelDtos = createLabels();
 
-        postController.update(id, null, postDto.getContent(), labelDtos);
+        try {
+            postController.update(id, null, postDto.getContent(), labelDtos);
+        } catch (RuntimeException e) {
+            System.err.println("Ошибка при добавлении labels к Post: " + e);
+        }
 
         System.out.println("Labels обновлены");
     }

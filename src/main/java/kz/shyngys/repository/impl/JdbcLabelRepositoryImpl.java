@@ -24,8 +24,8 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
             " left join post_labels  pl " +
             " on l.id = pl.label_id " +
             " left join posts p " +
-            " on p.id = pl.post_id " +
-            " where l.id = ? and p.status = 'ACTIVE'";
+            " on p.id = pl.post_id and p.status = 'ACTIVE' " +
+            " where l.id = ? ";
     private final String SQL_GET_ALL_LABELS = "select l.id, l.name from labels l";
     private final String SQL_INSERT_LABEL = "insert into labels (name) values (?)";
     private final String SQL_UPDATE_LABEL_BY_ID = "update labels set name = ? where id = ?";
