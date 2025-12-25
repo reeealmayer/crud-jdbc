@@ -18,5 +18,5 @@
 
 # Запуск приложения
 - необходимо поднять MySQL БД, указав проперти в DatabaseProperties
-- запустить патчи миграции liquibase, запустив класс DatabaseMigration
 - java -cp build/classes/java/main kz.shyngys.AppRunner
+- при первом запуске необходимо прогнать патчи миграции, вызвав пункт в меню

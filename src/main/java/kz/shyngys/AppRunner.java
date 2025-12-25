@@ -1,6 +1,5 @@
 package kz.shyngys;
 
-import kz.shyngys.db.DatabaseUtils;
 import kz.shyngys.view.MainView;
 
 public class AppRunner {

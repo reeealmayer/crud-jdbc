@@ -2,6 +2,7 @@ package kz.shyngys.view;
 
 
 import kz.shyngys.context.ApplicationContext;
+import kz.shyngys.db.DatabaseMigration;
 
 import java.util.Scanner;
 
@@ -15,6 +16,7 @@ public class MainView {
             System.out.println("1. Управление Labels");
             System.out.println("2. Управление Posts");
             System.out.println("3. Управление Writers");
+            System.out.println("4. Применить патчи миграции Liquibase");
             System.out.println("0. Выход");
             System.out.print("Выберите действие: ");
 
@@ -23,6 +25,7 @@ public class MainView {
                 case "1" -> applicationContext.getLabelView().showMenu();
                 case "2" -> applicationContext.getPostView().showMenu();
                 case "3" -> applicationContext.getWriterView().showMenu();
+                case "4" -> DatabaseMigration.migrate();
                 case "0" -> {
                     System.out.println("Выход...");
                     ApplicationContext.closeContext();
