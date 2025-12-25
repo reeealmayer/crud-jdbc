@@ -6,7 +6,7 @@ plugins {
     id("io.freefair.lombok") version "9.1.0"
 }
 
-group = "org.example"
+group = "kz.shyngys"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -14,8 +14,13 @@ repositories {
 }
 
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.4")
+    testImplementation("org.mockito:mockito-core:5.14.2")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.14.2")
+    testImplementation("net.bytebuddy:byte-buddy:1.15.11")
+    testImplementation("net.bytebuddy:byte-buddy-agent:1.15.11")
 
     implementation("com.mysql:mysql-connector-j:8.2.0")
     implementation("org.liquibase:liquibase-core:4.25.1")
