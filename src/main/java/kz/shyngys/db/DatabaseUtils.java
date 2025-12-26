@@ -10,6 +10,9 @@ public class DatabaseUtils {
     private DatabaseUtils() {
     }
 
+    //TODO private и добавить получение ps
+    //TODO отдельный connection с autoCommit(false)
+    //TODO 3 (?) отдельных ps: generatedkeys, ...
     public static Connection getConnection() {
         if (connection == null) {
             try {

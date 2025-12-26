@@ -38,6 +38,7 @@ class LabelServiceImplTest {
     @Test
     void getByIdShouldReturnLabel() {
         //given
+        //TODO приватный метод или класс TestDataUtils для получения данных
         Label label = new Label();
         label.setId(1L);
         label.setName("name");

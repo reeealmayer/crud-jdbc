@@ -54,6 +54,7 @@ public class JdbcPostRepositoryImpl implements PostRepository {
                 Writer writer = null;
                 List<Label> labels = new ArrayList<>();
 
+                //TODO выделить логику в private метод
                 while (resultSet.next()) {
                     if (post == null) {
                         post = PostMapper.toPost(resultSet);
@@ -110,6 +111,7 @@ public class JdbcPostRepositoryImpl implements PostRepository {
             try {
                 Long postId = savePost(connection, post.getWriter().getId(), post);
 
+                //TODO поместить в метод savePost
                 if (!CollectionUtils.isEmpty(post.getLabels())) {
                     savePostLabels(connection, postId, post.getLabels());
                 }

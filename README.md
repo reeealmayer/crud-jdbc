@@ -16,6 +16,7 @@
 # Сборка проекта
 - ./gradle build
 
+//TODO подробности запуска
 # Запуск приложения
 - необходимо поднять MySQL БД, указав проперти в DatabaseProperties
 - java -cp build/classes/java/main kz.shyngys.AppRunner
