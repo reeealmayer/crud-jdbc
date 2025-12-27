@@ -13,22 +13,33 @@ repositories {
     mavenCentral()
 }
 
+val versions = mapOf(
+    "junit" to "5.11.4",
+    "junitPlatform" to "1.11.4",
+    "mockito" to "5.14.2",
+    "byteBuddy" to "1.15.11",
+    "mysqlConnector" to "8.2.0",
+    "liquibaseCore" to "4.25.1",
+    "liquibaseRuntime" to "4.23.2",
+    "mysqlConnectorRuntime" to "8.4.0",
+    "snakeyaml" to "2.2"
+)
+
 dependencies {
-    //TODO вынести версии в мапы
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.4")
-    testImplementation("org.mockito:mockito-core:5.14.2")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.14.2")
-    testImplementation("net.bytebuddy:byte-buddy:1.15.11")
-    testImplementation("net.bytebuddy:byte-buddy-agent:1.15.11")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:${versions["junit"]}")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${versions["junit"]}")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:${versions["junitPlatform"]}")
+    testImplementation("org.mockito:mockito-core:${versions["mockito"]}")
+    testImplementation("org.mockito:mockito-junit-jupiter:${versions["mockito"]}")
+    testImplementation("net.bytebuddy:byte-buddy:${versions["byteBuddy"]}")
+    testImplementation("net.bytebuddy:byte-buddy-agent:${versions["byteBuddy"]}")
 
-    implementation("com.mysql:mysql-connector-j:8.2.0")
-    implementation("org.liquibase:liquibase-core:4.25.1")
+    implementation("com.mysql:mysql-connector-j:${versions["mysqlConnector"]}")
+    implementation("org.liquibase:liquibase-core:${versions["liquibaseCore"]}")
 
-    liquibaseRuntime("org.liquibase:liquibase-core:4.23.2")
-    liquibaseRuntime("com.mysql:mysql-connector-j:8.4.0")
-    liquibaseRuntime("org.yaml:snakeyaml:2.2")
+    liquibaseRuntime("org.liquibase:liquibase-core:${versions["liquibaseRuntime"]}")
+    liquibaseRuntime("com.mysql:mysql-connector-j:${versions["mysqlConnectorRuntime"]}")
+    liquibaseRuntime("org.yaml:snakeyaml:${versions["snakeyaml"]}")
 }
 
 

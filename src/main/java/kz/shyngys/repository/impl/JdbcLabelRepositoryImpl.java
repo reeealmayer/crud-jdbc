@@ -8,11 +8,9 @@ import kz.shyngys.repository.LabelRepository;
 import kz.shyngys.util.LabelMapper;
 import kz.shyngys.util.PostMapper;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,9 +31,8 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
 
     @Override
     public Label getById(Long id) {
-        Connection connection = DatabaseUtils.getConnection();
         try (
-                PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_LABEL_BY_ID)
+                PreparedStatement preparedStatement = DatabaseUtils.getPreparedStatement(SQL_GET_LABEL_BY_ID)
         ) {
             preparedStatement.setLong(1, id);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -62,11 +59,10 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
 
     @Override
     public List<Label> getAll() {
-        Connection connection = DatabaseUtils.getConnection();
         try (
-                Statement statement = connection.createStatement()
+                PreparedStatement statement = DatabaseUtils.getPreparedStatement(SQL_GET_ALL_LABELS)
         ) {
-            try (ResultSet resultSet = statement.executeQuery(SQL_GET_ALL_LABELS)) {
+            try (ResultSet resultSet = statement.executeQuery()) {
                 List<Label> labels = new ArrayList<>();
                 while (resultSet.next()) {
                     labels.add(LabelMapper.toLabel(resultSet));
@@ -83,10 +79,9 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
 
     @Override
     public Label save(Label label) {
-        Connection connection = DatabaseUtils.getConnection();
         try (
                 PreparedStatement preparedStatement
-                        = connection.prepareStatement(SQL_INSERT_LABEL, Statement.RETURN_GENERATED_KEYS)
+                        = DatabaseUtils.getPreparedStatementWithGeneratedKeys(SQL_INSERT_LABEL)
         ) {
             preparedStatement.setString(1, label.getName());
             int affectedRows = preparedStatement.executeUpdate();
@@ -109,9 +104,8 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
 
     @Override
     public Label update(Label label) {
-        Connection connection = DatabaseUtils.getConnection();
         try (
-                PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE_LABEL_BY_ID)
+                PreparedStatement preparedStatement = DatabaseUtils.getPreparedStatement(SQL_UPDATE_LABEL_BY_ID)
         ) {
             preparedStatement.setString(1, label.getName());
             preparedStatement.setLong(2, label.getId());
@@ -128,9 +122,8 @@ public class JdbcLabelRepositoryImpl implements LabelRepository {
 
     @Override
     public void deleteById(Label label) {
-        Connection connection = DatabaseUtils.getConnection();
         try (
-                PreparedStatement preparedStatement = connection.prepareStatement(SQl_DELETE_LABEL_BY_ID)
+                PreparedStatement preparedStatement = DatabaseUtils.getPreparedStatement(SQl_DELETE_LABEL_BY_ID)
         ) {
             preparedStatement.setLong(1, label.getId());
             int affectedRows = preparedStatement.executeUpdate();

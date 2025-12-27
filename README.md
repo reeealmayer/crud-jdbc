@@ -16,8 +16,10 @@
 # Сборка проекта
 - ./gradle build
 
-//TODO подробности запуска
 # Запуск приложения
 - необходимо поднять MySQL БД, указав проперти в DatabaseProperties
+  URL: jdbc:mysql://localhost:3306/testdb
+  USERNAME: test
+  PASSWORD: test
 - java -cp build/classes/java/main kz.shyngys.AppRunner
 - при первом запуске необходимо прогнать патчи миграции, вызвав пункт в меню

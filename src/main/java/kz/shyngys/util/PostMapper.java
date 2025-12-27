@@ -1,5 +1,6 @@
 package kz.shyngys.util;
 
+import kz.shyngys.exception.NotFoundException;
 import kz.shyngys.model.Label;
 import kz.shyngys.model.Post;
 import kz.shyngys.model.Status;
@@ -10,6 +11,7 @@ import kz.shyngys.model.dto.PostDto;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -91,5 +93,34 @@ public class PostMapper {
                 writerId,
                 labelDtos
         );
+    }
+
+    public static Post mapPostFromResultSet(ResultSet rs, Long postId) throws SQLException {
+        Post post = null;
+        Writer writer = null;
+        List<Label> labels = new ArrayList<>();
+
+        while (rs.next()) {
+            if (post == null) {
+                post = PostMapper.toPost(rs);
+            }
+
+            if (writer == null) {
+                writer = WriterMapper.toWriter(rs);
+            }
+
+            Label label = LabelMapper.toLabel(rs);
+            if (label.getId() != null && label.getId() != 0L) {
+                labels.add(label);
+            }
+        }
+
+        if (post == null) {
+            throw new NotFoundException("Post не найден с id: " + postId);
+        }
+
+        post.setWriter(writer);
+        post.setLabels(labels);
+        return post;
     }
 }

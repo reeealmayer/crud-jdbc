@@ -6,6 +6,7 @@ import kz.shyngys.model.Status;
 import kz.shyngys.model.Writer;
 import kz.shyngys.model.dto.PostDto;
 import kz.shyngys.repository.PostRepository;
+import kz.shyngys.utils.TestDataUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -45,31 +46,11 @@ class PostServiceImplTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        writer = Writer.builder()
-                .id(1L)
-                .firstName("John")
-                .lastName("Doe")
-                .build();
+        writer = TestDataUtils.createWriter();
 
-        post = Post.builder()
-                .id(1L)
-                .content("Test content")
-                .created(LocalDateTime.now())
-                .updated(LocalDateTime.now())
-                .status(Status.ACTIVE)
-                .writer(writer)
-                .labels(new ArrayList<>())
-                .build();
+        post = TestDataUtils.createPost();
 
-        postDto = PostDto.builder()
-                .id(1L)
-                .content("Test content")
-                .created(post.getCreated())
-                .updated(post.getUpdated())
-                .status(Status.ACTIVE)
-                .writerId(1L)
-                .labels(new ArrayList<>())
-                .build();
+        postDto = TestDataUtils.createPostDto();
     }
 
     @Test

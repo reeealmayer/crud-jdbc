@@ -8,6 +8,7 @@ import kz.shyngys.model.dto.PostDto;
 import kz.shyngys.model.dto.WriterFullDto;
 import kz.shyngys.model.dto.WriterShortDto;
 import kz.shyngys.repository.WriterRepository;
+import kz.shyngys.utils.TestDataUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -38,38 +39,16 @@ class WriterServiceImplTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        post = Post.builder()
-                .id(1L)
-                .content("Test post")
-                .created(LocalDateTime.now())
-                .updated(LocalDateTime.now())
-                .status(Status.ACTIVE)
-                .labels(new ArrayList<>())
-                .build();
+        post = TestDataUtils.createPost();
 
-        writer = Writer.builder()
-                .id(1L)
-                .firstName("John")
-                .lastName("Doe")
-                .posts(List.of(post))
-                .build();
+        writer = TestDataUtils.createWriter();
+        writer.setPosts(List.of(post));
 
-        PostDto postDto = PostDto.builder()
-                .id(1L)
-                .content("Test post")
-                .created(post.getCreated())
-                .updated(post.getUpdated())
-                .status(Status.ACTIVE)
-                .writerId(1L)
-                .labels(new ArrayList<>())
-                .build();
 
-        writerFullDto = WriterFullDto.builder()
-                .id(1L)
-                .firstName("John")
-                .lastName("Doe")
-                .posts(List.of(postDto))
-                .build();
+        PostDto postDto = TestDataUtils.createPostDto();
+
+        writerFullDto = TestDataUtils.createWriterFullDto();
+        writerFullDto.setPosts(List.of(postDto));
     }
 
     @Test

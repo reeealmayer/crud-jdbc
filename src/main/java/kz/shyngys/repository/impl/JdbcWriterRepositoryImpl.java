@@ -10,49 +10,47 @@ import kz.shyngys.util.PostMapper;
 import kz.shyngys.util.WriterMapper;
 import org.apache.commons.collections4.CollectionUtils;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcWriterRepositoryImpl implements WriterRepository {
 
-    private final String SQL_GET_WRITER_WITH_POSTS_BY_ID = "select w.id, w.first_name, w.last_name, p.id, p.content, p.created, p.updated, p.status " +
-            " from writers w " +
-            " left join posts p " +
-            " on w.id = p.writer_id " +
-            " where w.id = ? ";
-    private final String SQL_GET_ALL_WRITERS = "select w.id, w.first_name, w.last_name from writers w";
-    private final String SQL_INSERT_WRITER = "insert into writers (first_name, last_name) values (?, ?)";
-    private final String SQL_UPDATE_WRITER_BY_ID = "update writers set first_name = ?, last_name = ? where id = ?";
-    private final String SQL_DELETE_WRITER_BY_ID = "delete from writers where id = ?";
-    private final String SQL_INSERT_POST = "insert into posts (content, status, writer_id) values (?, ?, ?)";
-    private final String SQL_UPDATE_POST = "update posts set content = ?, status = ? where id = ?";
-    private final String SQL_INSERT_LABEL = "insert into labels (name) values (?) on duplicate key update name = name";
-    private final String SQL_GET_LABEL_BY_NAME = "select id from labels where name = ?";
-    private final String SQL_INSERT_POST_LABEL = "insert into post_labels (post_id, label_id) values (?, ?)";
+    private static final String SQL_GET_WRITER_WITH_POSTS_BY_ID = "SELECT w.id, w.first_name, w.last_name, " +
+            "p.id, p.content, p.created, p.updated, p.status " +
+            "FROM writers w " +
+            "LEFT JOIN posts p ON w.id = p.writer_id " +
+            "WHERE w.id = ?";
+
+    private static final String SQL_GET_ALL_WRITERS = "SELECT w.id, w.first_name, w.last_name FROM writers w";
+    private static final String SQL_INSERT_WRITER = "INSERT INTO writers (first_name, last_name) VALUES (?, ?)";
+    private static final String SQL_UPDATE_WRITER_BY_ID = "UPDATE writers SET first_name = ?, last_name = ? WHERE id = ?";
+    private static final String SQL_DELETE_WRITER_BY_ID = "DELETE FROM writers WHERE id = ?";
+    private static final String SQL_INSERT_POST = "INSERT INTO posts (content, status, writer_id) VALUES (?, ?, ?)";
+    private static final String SQL_UPDATE_POST = "UPDATE posts SET content = ?, status = ? WHERE id = ?";
+    private static final String SQL_INSERT_LABEL = "INSERT INTO labels (name) VALUES (?) " +
+            "ON DUPLICATE KEY UPDATE name = name";
+    private static final String SQL_GET_LABEL_BY_NAME = "SELECT id FROM labels WHERE name = ?";
+    private static final String SQL_INSERT_POST_LABEL = "INSERT INTO post_labels (post_id, label_id) VALUES (?, ?)";
 
     @Override
     public Writer getById(Long id) {
-        Connection connection = DatabaseUtils.getConnection();
-        try (
-                PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_WRITER_WITH_POSTS_BY_ID)
-        ) {
-            preparedStatement.setLong(1, id);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+        try (PreparedStatement ps = DatabaseUtils.getPreparedStatement(SQL_GET_WRITER_WITH_POSTS_BY_ID)) {
+            ps.setLong(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
                 Writer writer = null;
                 List<Post> posts = new ArrayList<>();
 
-                while (resultSet.next()) {
+                while (rs.next()) {
                     if (writer == null) {
-                        writer = WriterMapper.toWriter(resultSet);
+                        writer = WriterMapper.toWriter(rs);
                     }
 
-                    Post post = PostMapper.toPost(resultSet);
-                    if (post.getId() != 0L) {
+                    Post post = PostMapper.toPost(rs);
+                    if (post.getId() != null && post.getId() != 0L) {
                         posts.add(post);
                     }
                 }
@@ -60,34 +58,33 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
                 if (writer == null) {
                     throw new NotFoundException("Writer не найден с id: " + id);
                 }
+
                 writer.setPosts(posts);
                 return writer;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
+            throw new RuntimeException("Ошибка при получении Writer по id: " + id, e);
         }
     }
 
     @Override
     public List<Writer> getAll() {
-        Connection connection = DatabaseUtils.getConnection();
-        try (
-                Statement statement = connection.createStatement()
-        ) {
+        try (PreparedStatement ps = DatabaseUtils.getPreparedStatement(SQL_GET_ALL_WRITERS);
+             ResultSet rs = ps.executeQuery()) {
 
-            try (ResultSet resultSet = statement.executeQuery(SQL_GET_ALL_WRITERS)) {
-                List<Writer> writers = new ArrayList<>();
-                while (resultSet.next()) {
-                    Writer writer = WriterMapper.toWriter(resultSet);
-                    writers.add(writer);
-                }
-                if (writers.isEmpty()) {
-                    throw new NotFoundException("В таблице writers нет записей");
-                }
-                return writers;
+            List<Writer> writers = new ArrayList<>();
+
+            while (rs.next()) {
+                writers.add(WriterMapper.toWriter(rs));
             }
+
+            if (writers.isEmpty()) {
+                throw new NotFoundException("В таблице writers нет записей");
+            }
+
+            return writers;
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
+            throw new RuntimeException("Ошибка при получении всех Writers", e);
         }
     }
 
@@ -98,34 +95,26 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
      */
     @Override
     public Writer save(Writer writer) {
-        Connection connection = DatabaseUtils.getConnection();
         try {
-            connection.setAutoCommit(false);
-            try {
-                Long writerId = saveWriter(connection, writer);
-                writer.setId(writerId);
+            Long writerId = saveWriter(writer);
+            writer.setId(writerId);
 
-                if (!CollectionUtils.isEmpty(writer.getPosts())) {
-                    for (Post post : writer.getPosts()) {
-                        Long postId = savePost(connection, writerId, post);
-                        post.setId(postId);
+            if (!CollectionUtils.isEmpty(writer.getPosts())) {
+                for (Post post : writer.getPosts()) {
+                    Long postId = savePost(writerId, post);
+                    post.setId(postId);
 
-                        if (!CollectionUtils.isEmpty(post.getLabels())) {
-                            savePostLabels(connection, postId, post.getLabels());
-                        }
-
+                    if (!CollectionUtils.isEmpty(post.getLabels())) {
+                        savePostLabels(postId, post.getLabels());
                     }
                 }
-                connection.commit();
-                connection.setAutoCommit(true);
-                return writer;
-            } catch (SQLException e) {
-                connection.rollback();
-                connection.setAutoCommit(true);
-                throw e;
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
+
+            DatabaseUtils.commit();
+            return writer;
+        } catch (Exception e) {
+            DatabaseUtils.rollback();
+            throw new RuntimeException("Ошибка при сохранении Writer", e);
         }
     }
 
@@ -138,154 +127,150 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
      */
     @Override
     public Writer update(Writer writer) {
-        Connection connection = DatabaseUtils.getConnection();
-        try (
-                PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE_WRITER_BY_ID)
-        ) {
-            connection.setAutoCommit(false);
-            preparedStatement.setString(1, writer.getFirstName());
-            preparedStatement.setString(2, writer.getLastName());
-            preparedStatement.setLong(3, writer.getId());
+        try {
+            updateWriter(writer);
 
-            try {
-                int affectedRows = preparedStatement.executeUpdate();
-                if (affectedRows == 0) {
-                    throw new SQLException("Обновление writer не удалось, ни одна строка не затронута  для id: " + writer.getId());
-                }
-
-                List<Post> posts = writer.getPosts();
-                if (!CollectionUtils.isEmpty(posts)) {
-                    writer.setPosts(savePosts(connection, writer.getId(), posts));
-                }
-                connection.commit();
-                return writer;
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            } finally {
-                connection.setAutoCommit(true);
+            List<Post> posts = writer.getPosts();
+            if (!CollectionUtils.isEmpty(posts)) {
+                writer.setPosts(savePosts(writer.getId(), posts));
             }
 
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
+            DatabaseUtils.commit();
+            return writer;
+        } catch (Exception e) {
+            DatabaseUtils.rollback();
+            throw new RuntimeException("Ошибка при обновлении Writer с id: " + writer.getId(), e);
         }
     }
 
     @Override
     public void deleteById(Writer writer) {
-        Connection connection = DatabaseUtils.getConnection();
-        try (
-                PreparedStatement preparedStatement = connection.prepareStatement(SQL_DELETE_WRITER_BY_ID)
-        ) {
-            preparedStatement.setLong(1, writer.getId());
+        try (PreparedStatement ps = DatabaseUtils.getPreparedStatement(SQL_DELETE_WRITER_BY_ID)) {
+            ps.setLong(1, writer.getId());
 
-            int affectedRows = preparedStatement.executeUpdate();
+            int affectedRows = ps.executeUpdate();
             if (affectedRows == 0) {
-                throw new SQLException("Удаление writer не удалось, ни одна строка не затронута");
+                throw new NotFoundException("Writer с id " + writer.getId() + " не найден для удаления");
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
+            throw new RuntimeException("Ошибка при удалении Writer с id: " + writer.getId(), e);
         }
     }
 
-    private Long saveWriter(Connection connection, Writer writer) throws SQLException {
-        try (PreparedStatement preparedStatement
-                     = connection.prepareStatement(SQL_INSERT_WRITER, Statement.RETURN_GENERATED_KEYS)) {
-            preparedStatement.setString(1, writer.getFirstName());
-            preparedStatement.setString(2, writer.getLastName());
+    private Long saveWriter(Writer writer) throws SQLException {
+        try (PreparedStatement ps = DatabaseUtils.getTransactionPreparedStatementWithGeneratedKeys(SQL_INSERT_WRITER)) {
+            ps.setString(1, writer.getFirstName());
+            ps.setString(2, writer.getLastName());
 
-            int affectedRows = preparedStatement.executeUpdate();
+            int affectedRows = ps.executeUpdate();
             if (affectedRows == 0) {
-                throw new SQLException("Создание writer не удалось, ни одна строка не добавлена");
+                throw new SQLException("Создание Writer не удалось, ни одна строка не добавлена");
             }
-            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+
+            try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     return generatedKeys.getLong(1);
-                } else {
-                    throw new SQLException("Создание writer не удалось, id не получен");
                 }
+                throw new SQLException("Создание Writer не удалось, id не получен");
             }
         }
     }
 
-    private Long savePost(Connection connection, Long writerId, Post post) throws SQLException {
-        try (
-                PreparedStatement preparedStatement
-                        = connection.prepareStatement(SQL_INSERT_POST, Statement.RETURN_GENERATED_KEYS)
-        ) {
-            preparedStatement.setString(1, post.getContent());
-            preparedStatement.setString(2, post.getStatus().name());
-            preparedStatement.setLong(3, writerId);
+    private void updateWriter(Writer writer) throws SQLException {
+        try (PreparedStatement ps = DatabaseUtils.getTransactionPreparedStatement(SQL_UPDATE_WRITER_BY_ID)) {
+            ps.setString(1, writer.getFirstName());
+            ps.setString(2, writer.getLastName());
+            ps.setLong(3, writer.getId());
 
-            preparedStatement.executeUpdate();
-
-            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    return generatedKeys.getLong(1);
-                } else {
-                    throw new SQLException("Создание post не удалось, id не получен");
-                }
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows == 0) {
+                throw new NotFoundException("Writer с id " + writer.getId() + " не найден для обновления");
             }
         }
     }
 
-    private List<Post> savePosts(Connection connection, Long writerId, List<Post> posts) throws SQLException {
-        try (
-                PreparedStatement preparedStatementForInsertPost
-                        = connection.prepareStatement(SQL_INSERT_POST, Statement.RETURN_GENERATED_KEYS);
-                PreparedStatement preparedStatementForUpdatePost = connection.prepareStatement(SQL_UPDATE_POST)
-        ) {
+    private Long savePost(Long writerId, Post post) throws SQLException {
+        try (PreparedStatement ps = DatabaseUtils.getTransactionPreparedStatementWithGeneratedKeys(SQL_INSERT_POST)) {
+            ps.setString(1, post.getContent());
+            ps.setString(2, post.getStatus().name());
+            ps.setLong(3, writerId);
+
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Создание Post не удалось, ни одна строка не добавлена");
+            }
+
+            try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getLong(1);
+                }
+                throw new SQLException("Создание Post не удалось, id не получен");
+            }
+        }
+    }
+
+    private List<Post> savePosts(Long writerId, List<Post> posts) throws SQLException {
+        try (PreparedStatement psInsert = DatabaseUtils.getTransactionPreparedStatementWithGeneratedKeys(SQL_INSERT_POST);
+             PreparedStatement psUpdate = DatabaseUtils.getTransactionPreparedStatement(SQL_UPDATE_POST)) {
+
+            List<Post> postsToInsert = new ArrayList<>();
+
             for (Post post : posts) {
                 if (post.getId() != null) {
-                    preparedStatementForUpdatePost.setString(1, post.getContent());
-                    preparedStatementForUpdatePost.setString(2, post.getStatus().name());
-                    preparedStatementForUpdatePost.setLong(3, post.getId());
-                    preparedStatementForUpdatePost.addBatch();
+                    psUpdate.setString(1, post.getContent());
+                    psUpdate.setString(2, post.getStatus().name());
+                    psUpdate.setLong(3, post.getId());
+                    psUpdate.addBatch();
                 } else {
-                    preparedStatementForInsertPost.setString(1, post.getContent());
-                    preparedStatementForInsertPost.setString(2, post.getStatus().name());
-                    preparedStatementForInsertPost.setLong(3, writerId);
-                    preparedStatementForInsertPost.addBatch();
+                    psInsert.setString(1, post.getContent());
+                    psInsert.setString(2, post.getStatus().name());
+                    psInsert.setLong(3, writerId);
+                    psInsert.addBatch();
+                    postsToInsert.add(post);
                 }
             }
 
-            preparedStatementForInsertPost.executeBatch();
-            preparedStatementForUpdatePost.executeBatch();
+            psInsert.executeBatch();
+            psUpdate.executeBatch();
 
-            try (ResultSet generatedKeys = preparedStatementForInsertPost.getGeneratedKeys()) {
+            try (ResultSet generatedKeys = psInsert.getGeneratedKeys()) {
                 int index = 0;
-                while (generatedKeys.next() && index < posts.size()) {
-                    posts.get(index).setId(generatedKeys.getLong(1));
+                while (generatedKeys.next() && index < postsToInsert.size()) {
+                    postsToInsert.get(index).setId(generatedKeys.getLong(1));
                     index++;
                 }
             }
+
             return posts;
         }
     }
 
-    private void savePostLabels(Connection connection, Long postId, List<Label> labels) throws SQLException {
+    private void savePostLabels(Long postId, List<Label> labels) throws SQLException {
         for (Label label : labels) {
-            Long labelId = getOrCreateLabel(connection, label.getName());
+            Long labelId = getOrCreateLabel(label.getName());
             label.setId(labelId);
-            linkPostLabel(connection, postId, labelId);
+            linkPostLabel(postId, labelId);
         }
     }
 
-    private Long getOrCreateLabel(Connection connection, String name) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_LABEL_BY_NAME)) {
-            preparedStatement.setString(1, name);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getLong("id");
+    private Long getOrCreateLabel(String name) throws SQLException {
+        try (PreparedStatement ps = DatabaseUtils.getTransactionPreparedStatement(SQL_GET_LABEL_BY_NAME)) {
+            ps.setString(1, name);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong("id");
                 }
             }
         }
 
-        try (PreparedStatement ps = connection.prepareStatement(
-                SQL_INSERT_LABEL,
-                Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement ps = DatabaseUtils.getTransactionPreparedStatementWithGeneratedKeys(SQL_INSERT_LABEL)) {
             ps.setString(1, name);
-            ps.executeUpdate();
+
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Создание Label не удалось");
+            }
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -296,11 +281,15 @@ public class JdbcWriterRepositoryImpl implements WriterRepository {
         }
     }
 
-    private void linkPostLabel(Connection connection, Long postId, Long labelId) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_INSERT_POST_LABEL)) {
-            preparedStatement.setLong(1, postId);
-            preparedStatement.setLong(2, labelId);
-            preparedStatement.executeUpdate();
+    private void linkPostLabel(Long postId, Long labelId) throws SQLException {
+        try (PreparedStatement ps = DatabaseUtils.getTransactionPreparedStatement(SQL_INSERT_POST_LABEL)) {
+            ps.setLong(1, postId);
+            ps.setLong(2, labelId);
+
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Не удалось связать Post и Label");
+            }
         }
     }
 }

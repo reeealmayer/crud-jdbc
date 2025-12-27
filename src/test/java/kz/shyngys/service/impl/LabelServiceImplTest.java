@@ -4,6 +4,7 @@ import kz.shyngys.exception.NotFoundException;
 import kz.shyngys.model.Label;
 import kz.shyngys.model.dto.LabelDto;
 import kz.shyngys.repository.LabelRepository;
+import kz.shyngys.utils.TestDataUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -38,10 +39,7 @@ class LabelServiceImplTest {
     @Test
     void getByIdShouldReturnLabel() {
         //given
-        //TODO приватный метод или класс TestDataUtils для получения данных
-        Label label = new Label();
-        label.setId(1L);
-        label.setName("name");
+        Label label = TestDataUtils.createLabel(1L, "name");
 
         //when
         when(labelRepository.getById(anyLong())).thenReturn(label);
@@ -70,12 +68,8 @@ class LabelServiceImplTest {
     @Test
     void getAllShouldReturnLabels() {
         //given
-        Label label1 = new Label();
-        label1.setId(1L);
-        label1.setName("name1");
-        Label label2 = new Label();
-        label2.setId(2L);
-        label2.setName("name2");
+        Label label1 = TestDataUtils.createLabel(1L, "name1");
+        Label label2 = TestDataUtils.createLabel(2L, "name2");
 
         //when
         when(labelRepository.getAll()).thenReturn(List.of(label1, label2));
@@ -106,12 +100,9 @@ class LabelServiceImplTest {
     @Test
     void saveShouldSuccess() {
         //given
-        LabelDto request = new LabelDto();
-        request.setName("new Label");
+        LabelDto request = TestDataUtils.createLabelDto(1L, "new Label");
 
-        Label label = new Label();
-        label.setId(1L);
-        label.setName(request.getName());
+        Label label = TestDataUtils.createLabel(1L, request.getName());
 
         //when
         when(labelRepository.save(any())).thenReturn(label);
@@ -127,13 +118,9 @@ class LabelServiceImplTest {
     @Test
     void updateShouldSuccess() {
         //given
-        LabelDto request = new LabelDto();
-        request.setId(1L);
-        request.setName("new Label");
+        LabelDto request = TestDataUtils.createLabelDto(1L, "new Label");
 
-        Label label = new Label();
-        label.setId(1L);
-        label.setName(request.getName());
+        Label label = TestDataUtils.createLabel(1L, request.getName());
 
         //when
         when(labelRepository.update(any())).thenReturn(label);
@@ -149,8 +136,7 @@ class LabelServiceImplTest {
     @Test
     void deleteShouldSuccess() {
         //given
-        Label label = new Label();
-        label.setId(1L);
+        Label label = TestDataUtils.createLabel(1L, null);
 
         //when
         doNothing().when(labelRepository).deleteById(label);

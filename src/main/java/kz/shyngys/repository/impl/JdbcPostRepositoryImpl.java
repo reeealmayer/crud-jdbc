@@ -4,245 +4,189 @@ import kz.shyngys.db.DatabaseUtils;
 import kz.shyngys.exception.NotFoundException;
 import kz.shyngys.model.Label;
 import kz.shyngys.model.Post;
-import kz.shyngys.model.Writer;
 import kz.shyngys.repository.PostRepository;
-import kz.shyngys.util.LabelMapper;
 import kz.shyngys.util.PostMapper;
-import kz.shyngys.util.WriterMapper;
 import org.apache.commons.collections4.CollectionUtils;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcPostRepositoryImpl implements PostRepository {
-    private final String SQL_GET_POST_BY_ID = " select p.id, p.content, p.created, p.updated, p.status," +
-            " l.id, l.name, " +
-            " w.id, w.first_name, w.last_name " +
-            " from posts p " +
-            " left join post_labels pl " +
-            " on p.id = pl.post_id " +
-            " left join labels l " +
-            " on l.id = pl.label_id " +
-            " left join writers w " +
-            " on p.writer_id = w.id " +
-            " where p.id = ?";
-    private final String SQL_GET_ALL_POSTS = "select p.id, p.content, p.created, p.updated, p.status from posts p where p.status = 'ACTIVE'";
-    private final String SQL_DELETE_POST_BY_ID = "update posts set status = 'DELETED' where id = ?";
-    private final String SQL_INSERT_LABEL = "insert into labels (name) values (?) on duplicate key update name = name";
-    private final String SQL_GET_LABEL_BY_NAME = "select id from labels where name = ?";
-    private final String SQL_INSERT_POST_LABEL = "insert into post_labels (post_id, label_id) values (?, ?)";
-    private final String SQL_INSERT_POST = "insert into posts (content, status, writer_id) values (?, ?, ?)";
-    private final String SQL_UPDATE_POST = "update posts set content = ?, status = ?, writer_id = ? where id = ?";
-    private final String SQL_DELETE_POST_LABELS = "delete from post_labels where post_id = ?";
+
+    private static final String SQL_GET_POST_BY_ID = "SELECT p.id, p.content, p.created, p.updated, p.status, " +
+            "l.id, l.name, " +
+            "w.id, w.first_name, w.last_name " +
+            "FROM posts p " +
+            "LEFT JOIN post_labels pl ON p.id = pl.post_id " +
+            "LEFT JOIN labels l ON l.id = pl.label_id " +
+            "LEFT JOIN writers w ON p.writer_id = w.id " +
+            "WHERE p.id = ?";
+    private static final String SQL_GET_ALL_POSTS = "SELECT p.id, p.content, p.created, p.updated, p.status " +
+            "FROM posts p WHERE p.status = 'ACTIVE'";
+    private static final String SQL_DELETE_POST_BY_ID = "UPDATE posts SET status = 'DELETED' WHERE id = ?";
+    private static final String SQL_INSERT_LABEL = "INSERT INTO labels (name) VALUES (?) " +
+            "ON DUPLICATE KEY UPDATE name = name";
+    private static final String SQL_GET_LABEL_BY_NAME = "SELECT id FROM labels WHERE name = ?";
+    private static final String SQL_INSERT_POST_LABEL = "INSERT INTO post_labels (post_id, label_id) VALUES (?, ?)";
+    private static final String SQL_INSERT_POST = "INSERT INTO posts (content, status, writer_id) VALUES (?, ?, ?)";
+    private static final String SQL_UPDATE_POST = "UPDATE posts SET content = ?, status = ?, writer_id = ? WHERE id = ?";
+    private static final String SQL_DELETE_POST_LABELS = "DELETE FROM post_labels WHERE post_id = ?";
 
     @Override
     public Post getById(Long id) {
-        Connection connection = DatabaseUtils.getConnection();
-        try (
-                PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_POST_BY_ID)
-        ) {
-            preparedStatement.setLong(1, id);
-            try (
-                    ResultSet resultSet = preparedStatement.executeQuery()
-            ) {
-                Post post = null;
-                Writer writer = null;
-                List<Label> labels = new ArrayList<>();
+        try (PreparedStatement ps = DatabaseUtils.getPreparedStatement(SQL_GET_POST_BY_ID)) {
+            ps.setLong(1, id);
 
-                //TODO выделить логику в private метод
-                while (resultSet.next()) {
-                    if (post == null) {
-                        post = PostMapper.toPost(resultSet);
-                    }
-
-                    if (writer == null) {
-                        writer = WriterMapper.toWriter(resultSet);
-                    }
-
-                    Label label = LabelMapper.toLabel(resultSet);
-                    if (label.getId() != 0L) {
-                        labels.add(label);
-                    }
-                }
-                if (post == null) {
-                    throw new NotFoundException("Post не найден с id: " + id);
-                }
-                post.setWriter(writer);
-                post.setLabels(labels);
-                return post;
+            try (ResultSet rs = ps.executeQuery()) {
+                return PostMapper.mapPostFromResultSet(rs, id);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL: " + e);
+            throw new RuntimeException("Ошибка при получении Post по id: " + id, e);
         }
     }
 
     @Override
     public List<Post> getAll() {
-        Connection connection = DatabaseUtils.getConnection();
-        try (
-                PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_ALL_POSTS)
-        ) {
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                List<Post> posts = new ArrayList<>();
-                while (resultSet.next()) {
-                    Post post = PostMapper.toPost(resultSet);
-                    posts.add(post);
-                }
-                if (posts.isEmpty()) {
-                    throw new SQLException("В таблице posts нет записей");
-                }
-                return posts;
+        try (PreparedStatement ps = DatabaseUtils.getPreparedStatement(SQL_GET_ALL_POSTS);
+             ResultSet rs = ps.executeQuery()) {
+
+            List<Post> posts = new ArrayList<>();
+
+            while (rs.next()) {
+                posts.add(PostMapper.toPost(rs));
             }
+
+            if (posts.isEmpty()) {
+                throw new NotFoundException("В таблице posts нет записей");
+            }
+
+            return posts;
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL: " + e);
+            throw new RuntimeException("Ошибка при получении всех Posts", e);
         }
     }
 
     @Override
     public Post save(Post post) {
-        Connection connection = DatabaseUtils.getConnection();
         try {
-            connection.setAutoCommit(false);
-            try {
-                Long postId = savePost(connection, post.getWriter().getId(), post);
+            Long postId = savePost(post);
 
-                //TODO поместить в метод savePost
-                if (!CollectionUtils.isEmpty(post.getLabels())) {
-                    savePostLabels(connection, postId, post.getLabels());
-                }
-
-                connection.commit();
-                connection.setAutoCommit(true);
-                post.setId(postId);
-                return post;
-            } catch (SQLException e) {
-                connection.rollback();
-                connection.setAutoCommit(true);
-                throw e;
+            if (!CollectionUtils.isEmpty(post.getLabels())) {
+                savePostLabels(postId, post.getLabels());
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
+
+            DatabaseUtils.commit();
+            post.setId(postId);
+            return post;
+        } catch (Exception e) {
+            DatabaseUtils.rollback();
+            throw new RuntimeException("Ошибка при сохранении Post", e);
         }
     }
 
     @Override
     public Post update(Post post) {
-        Connection connection = DatabaseUtils.getConnection();
         try {
-            connection.setAutoCommit(false);
-            try {
-                updatePost(connection, post);
+            updatePost(post);
 
-                if (!CollectionUtils.isEmpty(post.getLabels())) {
-                    deletePostLabels(connection, post.getId());
-                    savePostLabels(connection, post.getId(), post.getLabels());
-                }
-
-                connection.commit();
-                connection.setAutoCommit(true);
-                return post;
-            } catch (SQLException e) {
-                connection.rollback();
-                connection.setAutoCommit(true);
-                throw e;
+            if (!CollectionUtils.isEmpty(post.getLabels())) {
+                deletePostLabels(post.getId());
+                savePostLabels(post.getId(), post.getLabels());
             }
 
-        } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL: " + e.getMessage());
-        }
-    }
-
-    private void updatePost(Connection connection, Post post) throws SQLException {
-        try (
-                PreparedStatement preparedStatement = connection.prepareStatement(SQL_UPDATE_POST)
-        ) {
-            preparedStatement.setString(1, post.getContent());
-            preparedStatement.setString(2, post.getStatus().name());
-            preparedStatement.setLong(3, post.getWriter().getId());
-            preparedStatement.setLong(4, post.getId());
-
-            int affectedRows = preparedStatement.executeUpdate();
-
-            if (affectedRows == 0) {
-                throw new SQLException("Обновление post не удалось, ни одна строка не затронута");
-            }
-        }
-    }
-
-    private void deletePostLabels(Connection connection, Long postId) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_DELETE_POST_LABELS)) {
-            preparedStatement.setLong(1, postId);
-            preparedStatement.executeUpdate();
+            DatabaseUtils.commit();
+            return post;
+        } catch (Exception e) {
+            DatabaseUtils.rollback();
+            throw new RuntimeException("Ошибка при обновлении Post с id: " + post.getId(), e);
         }
     }
 
     @Override
     public void deleteById(Post post) {
-        Connection connection = DatabaseUtils.getConnection();
-        try (
-                PreparedStatement preparedStatement = connection.prepareStatement(SQL_DELETE_POST_BY_ID)
-        ) {
-            preparedStatement.setLong(1, post.getId());
+        try (PreparedStatement ps = DatabaseUtils.getPreparedStatement(SQL_DELETE_POST_BY_ID)) {
+            ps.setLong(1, post.getId());
 
-            int affectedRows = preparedStatement.executeUpdate();
-
+            int affectedRows = ps.executeUpdate();
             if (affectedRows == 0) {
-                throw new SQLException("Удаление post не удалось, ни одна строка не затронута");
+                throw new NotFoundException("Post с id " + post.getId() + " не найден для удаления");
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка SQL: " + e);
+            throw new RuntimeException("Ошибка при удалении Post с id: " + post.getId(), e);
         }
     }
 
-    private void savePostLabels(Connection connection, Long postId, List<Label> labels) throws SQLException {
-        for (Label label : labels) {
-            Long labelId = getOrCreateLabel(connection, label.getName());
-            label.setId(labelId);
-            linkPostLabel(connection, postId, labelId);
-        }
-    }
 
-    private Long savePost(Connection connection, Long writerId, Post post) throws SQLException {
-        try (
-                PreparedStatement preparedStatement
-                        = connection.prepareStatement(SQL_INSERT_POST, Statement.RETURN_GENERATED_KEYS)
-        ) {
-            preparedStatement.setString(1, post.getContent());
-            preparedStatement.setString(2, post.getStatus().name());
-            preparedStatement.setLong(3, writerId);
+    private Long savePost(Post post) throws SQLException {
+        try (PreparedStatement ps = DatabaseUtils.getTransactionPreparedStatementWithGeneratedKeys(SQL_INSERT_POST)) {
+            ps.setString(1, post.getContent());
+            ps.setString(2, post.getStatus().name());
+            ps.setLong(3, post.getWriter().getId());
 
-            preparedStatement.executeUpdate();
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Создание Post не удалось, ни одна строка не добавлена");
+            }
 
-            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+            try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     return generatedKeys.getLong(1);
-                } else {
-                    throw new SQLException("Создание post не удалось, id не получен");
                 }
+                throw new SQLException("Создание Post не удалось, id не получен");
             }
         }
     }
 
-    private Long getOrCreateLabel(Connection connection, String name) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_GET_LABEL_BY_NAME)) {
-            preparedStatement.setString(1, name);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getLong("id");
+    private void updatePost(Post post) throws SQLException {
+        try (PreparedStatement ps = DatabaseUtils.getTransactionPreparedStatement(SQL_UPDATE_POST)) {
+            ps.setString(1, post.getContent());
+            ps.setString(2, post.getStatus().name());
+            ps.setLong(3, post.getWriter().getId());
+            ps.setLong(4, post.getId());
+
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows == 0) {
+                throw new NotFoundException("Post с id " + post.getId() + " не найден для обновления");
+            }
+        }
+    }
+
+    private void savePostLabels(Long postId, List<Label> labels) throws SQLException {
+        for (Label label : labels) {
+            Long labelId = getOrCreateLabel(label.getName());
+            label.setId(labelId);
+            linkPostLabel(postId, labelId);
+        }
+    }
+
+    private void deletePostLabels(Long postId) throws SQLException {
+        try (PreparedStatement ps = DatabaseUtils.getTransactionPreparedStatement(SQL_DELETE_POST_LABELS)) {
+            ps.setLong(1, postId);
+            ps.executeUpdate();
+        }
+    }
+
+    private Long getOrCreateLabel(String name) throws SQLException {
+        try (PreparedStatement ps = DatabaseUtils.getTransactionPreparedStatement(SQL_GET_LABEL_BY_NAME)) {
+            ps.setString(1, name);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong("id");
                 }
             }
         }
 
-        try (PreparedStatement ps = connection.prepareStatement(
-                SQL_INSERT_LABEL,
-                Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement ps = DatabaseUtils.getTransactionPreparedStatementWithGeneratedKeys(SQL_INSERT_LABEL)) {
             ps.setString(1, name);
-            ps.executeUpdate();
+
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Создание Label не удалось");
+            }
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -253,11 +197,15 @@ public class JdbcPostRepositoryImpl implements PostRepository {
         }
     }
 
-    private void linkPostLabel(Connection connection, Long postId, Long labelId) throws SQLException {
-        try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_INSERT_POST_LABEL)) {
-            preparedStatement.setLong(1, postId);
-            preparedStatement.setLong(2, labelId);
-            preparedStatement.executeUpdate();
+    private void linkPostLabel(Long postId, Long labelId) throws SQLException {
+        try (PreparedStatement ps = DatabaseUtils.getTransactionPreparedStatement(SQL_INSERT_POST_LABEL)) {
+            ps.setLong(1, postId);
+            ps.setLong(2, labelId);
+
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Не удалось связать Post и Label");
+            }
         }
     }
 }
